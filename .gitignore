@@ -1,0 +1,11 @@
+*~
+*.pyc
+
+/pyramid_logger.egg-info/
+/build/
+/dist/
+
+/.tox/
+/.coverage
+/htmlcov/
+
