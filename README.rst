@@ -1,6 +1,6 @@
-##############
-Pyramid-logger
-##############
+###########
+Pyramid-log
+###########
 
 This package includes a Python logging formatter which makes Pyramid_
 request attributes available for use in its format string.
