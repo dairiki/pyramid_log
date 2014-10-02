@@ -1,59 +1,80 @@
-#############################################
-More bits to stick in your log format strings
-#############################################
+##############
+Pyramid-logger
+##############
 
-This package includes a logger adapter which sticks a bunch of Pyramid
-request attributes onto logged LogRecords.  These attributes are then
-available for use in log format strings.
+This package includes a Python logging formatter which makes Pyramid_
+request attributes available for use in its format string.
 
 ***************
 Getting Started
 ***************
 
-Where normally you would do something like::
+To log the request method and path with all log messages::
 
     import logging
-    log = logging.getLogger('myapp')
-    log.warning("I say: %s", "howdy!")
+    from pyramid_logger import PyramidFormatter
 
-instead, use the ``getLogger`` provided by ``pyramid_logger``::
+    fmt = PyramidFormatter(
+        '%(asctime)s %(request.method)s %(request.path_qs)s: %(message)s')
 
-    import pyramid_logging
-    log = pyramid_logging.getLogger('myapp')
-    log.warning("I say: %s", "howdy!")
+    logging.basicConfig()
+    for handler in logging.getLogger().handlers:
+        handler.setFormatter(fmt)
 
-What this does is make a bunch of extra log record attributes available.
-These extra attributes may be used in ``logger.Formatter`` format strings.
-For example, you can now do::
+Now, if, in one of your views, you do::
 
-    logging.basicConfig(format=(
-        "%(asctime)s %(unauthenticated_userid)s [%(client_addr)s]"
-        " %(method)s %(path_qs)\n"
-        "    %(levelname)s %(message)s"
-        ))
+    log = logging.getLogger()
+    log.warning("I say %s", "howdy!")
 
-to get log messages which look like::
+you’ll get a log message like::
 
-    2014-10-01 17:55:02,001 user.principal [127.0.0.1] GET /page?arg=foo
-        WARNING I say: howdy!
+    2014-10-01 17:55:02,001 GET /path?arg=foo: I say howdy!
+
+All attributes of the current pyramid request are available for use in
+the format string (using “dotted” keys starting with the prefix
+``'request.'``.  (Admittedly, for logging purposes, some request
+attributes are more useful than others.)  Adding extra dots to the key
+will get you attributes of request attributes.  For example the
+matched route name is available as ``%(request.matched_route.name)s``.
+
+See the `pyramid.request`_ documentation for more details on what request
+attributes might be available.
+
+Configuring Logging in a File
+=============================
+
+If you configure logging in your app config (or some other) file you can
+do something like::
+
+    [loggers]
+    key = root
+
+    [handlers]
+    keys = console
+
+    [formatters]
+    keys = pyramid
+
+    [logger_root]
+    level = INFO
+    handlers = console
+
+    [handler_console]
+    class = StreamHandler
+    args = (sys.stderr,)
+    level = NOTSET
+    formatter = pyramid
+
+    [formatter_pyramid]
+    class = pyramid_logger.PyramidFormatter
+    format = %(asctime)s %(request.method)s %(request.path_qs)s
+             %(levename)-5.5s [%(name)s][%(threadName)s] %(message)s
+
+See the `pyramid chapter on logging`_ and the docs for the Python
+logging_ module’s `configuration file format`_ for more details on how
+this works.
 
 
-********************
-Supported Attributes
-********************
-
-The following pyramid request attributes are made available by the logging
-adapter:
-
-- ``unauthenticated_userid``
-- ``authenticated_userid``
-- ``client_addr``
-- ``method``
-- ``url``
-- ``path``
-- ``path_info``
-- ``path_qs``
-- ``qs``
 
 ***********
 Development
@@ -74,3 +95,14 @@ Author
 ******
 
 Jeff Dairiki <dairiki@dairiki.org>
+
+.. _pyramid:
+   http://docs.pylonsproject.org/projects/pyramid/en/latest/
+.. _pyramid.request:
+   http://docs.pylonsproject.org/projects/pyramid/en/latest/api/request.html
+.. _pyramid chapter on logging:
+   http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/logging.html
+.. _logging:
+   https://docs.python.org/3/library/logging.html
+.. _configuration file format:
+   https://docs.python.org/3/library/logging.config.html#logging-config-fileformat

@@ -3,63 +3,105 @@ from __future__ import absolute_import
 
 import logging
 
-from pyramid.compat import text_type
 from pyramid.request import Request
 from pyramid import testing
 import pytest
 
 @pytest.fixture
-def pyramid_config(request):
-    config = testing.setUp()
+def current_request(request):
+    r = Request.blank('/')
+    config = testing.setUp(request=r)
     request.addfinalizer(testing.tearDown)
-    return config
+    return r
 
-def test_deferred_value():
-    from pyramid_logger import deferred_value
+@pytest.fixture
+def log_record():
+    return logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
 
-    class MockValue(object):
-        def __int__(self):
-            return 42
+class MockObject(object):
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
 
-        def __float__(self):
-            return 3.14159
+class TestFormatter(object):
+    def make_one(self, *args, **kwargs):
+        from pyramid_logger import PyramidFormatter
+        return PyramidFormatter(*args, **kwargs)
 
-        def __str__(self):
-            return 'strval'
-        __unicode__ = __str__
+    def test_with_explicit_request(self, log_record):
+        log_record.request = Request.blank('/', POST={})
+        formatter = self.make_one('%(request.method)s')
+        assert formatter.format(log_record) == 'POST'
 
-        def __repr__(self):
-            return '<repr>'
+    def test_with_threadlocal_request(self, current_request, log_record):
+        formatter = self.make_one('%(request.method)s')
+        assert formatter.format(log_record) == 'GET'
 
-    x = deferred_value(MockValue)
+class TestReplaceDict(object):
+    def make_one(self, obj, d):
+        from pyramid_logger import _ReplaceDict
+        return _ReplaceDict(obj, d)
 
-    assert "%d" % x == "42"
-    assert "%.1f" % x == "3.1"
-    assert "%r" % x == "<repr>"
-    assert "%s" % x == "strval"
-    # This tests deferred.__unicode__ under py2
-    assert text_type("%s") % x == "strval"
+    def test_getattr(self):
+        class Obj(object):
+            def m(self):
+                return 'foo'
+        obj = Obj()
+        proxy = self.make_one(obj, {'x': 'bar'})
+        assert proxy.m() == 'foo'
+        assert proxy.x == 'bar'
 
-def test_extra_data(pyramid_config):
-    from pyramid_logger import extra_data
-    pyramid_config.testing_securitypolicy('joe')
-    request = Request.blank('http://example.org/p/?foo=bar')
-    extra = dict(extra_data(request))
-    assert str(extra['unauthenticated_userid']) == 'joe'
-    assert str(extra['method']) == 'GET'
-    assert str(extra['path_qs']) == '/p/?foo=bar'
+    def test_setattr_modifies_proxy(self):
+        obj = MockObject(x='orig')
+        d = {}
+        proxy = self.make_one(obj, d)
+        proxy.x = 'changed'
+        assert d['x'] == 'changed'
+        assert obj.x == 'orig'
 
-def test_extra_data_with_no_request():
-    from pyramid_logger import extra_data, REQUEST_ATTRIBUTES
-    extra = set(extra_data(None))
-    assert extra == set((attr, None) for attr in REQUEST_ATTRIBUTES)
+    def test_init_with_explicit_dict(self):
+        obj = object()
+        d = {}
+        proxy = self.make_one(obj, d)
+        assert proxy.__dict__ is d
 
-def test_formatter(request, pyramid_config):
-    from pyramid_logger import PyramidFormatter
-    req = Request.blank('http://example.org/p/?foo=bar')
-    pyramid_config.begin(req)
-    request.addfinalizer(pyramid_config.end)
+class TestChainingDict(object):
+    def make_one(self, *args, **kwargs):
+        from pyramid_logger import _ChainingDict
+        return _ChainingDict(*args, **kwargs)
 
-    record = logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
-    formatter = PyramidFormatter('%(path_qs)s')
-    assert formatter.format(record) == '/p/?foo=bar'
+    def test_chained_getitem(self):
+        d = self.make_one({'a': {'b': 'x'}})
+        assert d['a.b'] == 'x'
+
+    def test_key_error(self):
+        d = self.make_one()
+        with pytest.raises(KeyError):
+            d['missing']
+        with pytest.raises(KeyError):
+            d['missing.b']
+
+class TestGetitemProxy(object):
+    def make_one(self, wrapped):
+        from pyramid_logger import _GetitemProxy
+        return _GetitemProxy(wrapped)
+
+    def test_proxy(self):
+        proxy = self.make_one(MockObject(x=1))
+        assert proxy.x == 1
+        assert isinstance(proxy, MockObject)
+
+    def test_getitem(self):
+        proxy = self.make_one(MockObject(x=42))
+        assert proxy['x'] == 42
+        assert proxy['missing'] is None
+
+    def test_chained_attribute_access(self):
+        proxy = self.make_one(MockObject(x=MockObject(y=42)))
+        assert proxy['x.y'] == 42
+        assert proxy['missing.y'] is None
+        assert proxy['x.missing'] is None
+
+    def test_proxy_none(self):
+        proxy = self.make_one(None)
+        assert proxy['foo'] is None
+        assert isinstance(proxy, type(None))

@@ -7,11 +7,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
-version = "0.1a2"
+version = "0.1a3"
 
 install_requires = [
     'pyramid',
-]
+    'zope.proxy',
+    ]
 
 tests_require = [
     'pytest',
@@ -23,7 +24,7 @@ class PyTest(TestCommand):
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args = []
+        self.pytest_args = ['pyramid_logger/tests.py']
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -39,18 +40,18 @@ class PyTest(TestCommand):
 setup(
     name='pyramid_logger',
     version=version,
-    description="More bits for you log format strings",
+    description="Include pyramid request attributes in your log messages",
     long_description=README + '\n\n' + CHANGES,
      classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Framework :: Pyramid",
+        "Topic :: System :: Logging",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
-        "Topic :: System :: Logging",
         ],
     keywords="pyramid logging",
     author="Jeff Dairiki",
