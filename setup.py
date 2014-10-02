@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright © 2014 Geoffrey T. Dairiki <dairiki@dairiki.org>
+#
 import sys, os
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand

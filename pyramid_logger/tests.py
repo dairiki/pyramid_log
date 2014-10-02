@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright © 2014 Geoffrey T. Dairiki <dairiki@dairiki.org>
+#
 from __future__ import absolute_import
 
 import logging
