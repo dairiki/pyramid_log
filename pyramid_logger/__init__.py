@@ -8,13 +8,10 @@ to log records (so that they may be reference in log format strings.)
 from __future__ import absolute_import
 
 import logging
-from logging import Logger, LoggerAdapter
 import sys
 from weakref import WeakKeyDictionary
 
 from pyramid.compat import text_type, PY3
-from pyramid.decorator import reify
-from pyramid.interfaces import IRequest
 from pyramid.threadlocal import get_current_request
 
 REQUEST_ATTRIBUTES = [
@@ -120,24 +117,6 @@ def get_extra_data(request):
         extra = extra_data_cache[request] = extra_data(request)
         return extra
 
-#FIXME: delete?
-class PyramidContextFilter(object):
-    """ A logging filter which adds attributes of the current pyramid request
-    to the log record.
-
-    """
-    def __init__(self, request=get_current_request):
-        self.request = request
-
-    def filter(self, record):
-        request = self.request
-        if not IRequest.providedBy(request) and callable(request):
-            request = request()
-        # FIXME: check that attribute doesn't already exist?
-        record.__dict__.update(get_extra_data(request))
-        return True
-
-
 # FIXME: rename to just Formatter?
 class PyramidFormatter(logging.Formatter):
     ''' A logging formatter which makes some attributes of the current
@@ -174,33 +153,3 @@ class PyramidFormatter(logging.Formatter):
     def _extra_data(self):
         request = self.get_current_request()
         return get_extra_data(request)
-
-# FIXME: delete below here
-class PyramidLoggerAdapter(LoggerAdapter):
-    def __init__(self, logger, extra=None, request=get_current_request):
-        LoggerAdapter.__init__(self, logger, extra=None)
-        self.extra = extra
-        self.request = request
-
-    def process(self, msg, kwargs):
-        explicit_extra = kwargs.get('extra')
-        request = self.request
-        if not IRequest.providedBy(request) and callable(request):
-            request = request()
-        if self.extra:
-            extra = self.extra.copy()
-        else:
-            extra = {}
-        extra.update(get_extra_data(request))
-        if explicit_extra:
-            extra.update(explicit_extra)
-        kwargs['extra'] = extra
-        return msg, kwargs
-
-    def isEnabledFor(self, level):
-        return self.logger.isEnabledFor(level)
-
-def getLogger(name=None, extra=None, request=get_current_request,
-              adapter=PyramidLoggerAdapter):
-    logger = logging.getLogger(name)
-    return adapter(logger, extra, request)

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+import logging
+
 from pyramid.compat import text_type
 from pyramid.request import Request
 from pyramid import testing
@@ -52,60 +54,12 @@ def test_extra_data_with_no_request():
     extra = set(extra_data(None))
     assert extra == set((attr, None) for attr in REQUEST_ATTRIBUTES)
 
-class TestPyramidLoggerAdapter(object):
+def test_formatter(request, pyramid_config):
+    from pyramid_logger import PyramidFormatter
+    req = Request.blank('http://example.org/p/?foo=bar')
+    pyramid_config.begin(req)
+    request.addfinalizer(pyramid_config.end)
 
-    def test_with_threadlocal_request(self, request, pyramid_config):
-        from pyramid_logger import PyramidLoggerAdapter
-
-        req = Request.blank('http://example.org/p/?foo=bar')
-        pyramid_config.begin(request=req)
-        request.addfinalizer(pyramid_config.end)
-        logger = 'ignored'
-
-        adapter = PyramidLoggerAdapter(logger)
-        msg, kwargs = adapter.process('foo', {})
-        assert msg == 'foo'
-        assert "%(method)s" % kwargs['extra'] == 'GET'
-
-    def test_with_explicit_request(self, pyramid_config):
-        from pyramid_logger import PyramidLoggerAdapter
-        req = Request.blank('http://example.org/p/?foo=bar')
-        logger = 'ignored'
-
-        adapter = PyramidLoggerAdapter(logger, request=req)
-        msg, kwargs = adapter.process('foo', {})
-        assert msg == 'foo'
-        assert "%(method)s" % kwargs['extra'] == 'GET'
-
-    def test_with_extras(self, pyramid_config):
-        from pyramid_logger import PyramidLoggerAdapter
-        req = Request.blank('http://example.org/p/?foo=bar')
-        extra = {'bar': 'baz'}
-        logger = 'ignored'
-
-        adapter = PyramidLoggerAdapter(logger, request=req, extra=extra)
-        msg, kwargs = adapter.process('foo', {})
-        assert msg == 'foo'
-        assert "%(bar)s" % kwargs['extra'] == 'baz'
-
-    def test_with_explicit_extras(self, pyramid_config):
-        from pyramid_logger import PyramidLoggerAdapter
-        req = Request.blank('http://example.org/p/?foo=bar')
-        extra = {'bar': 'baz'}
-        logger = 'ignored'
-
-        adapter = PyramidLoggerAdapter(logger, request=req)
-        msg, kwargs = adapter.process('foo', {'extra': extra})
-        assert msg == 'foo'
-        assert "%(bar)s" % kwargs['extra'] == 'baz'
-
-def test_getLogger():
-    from pyramid_logger import getLogger
-    adapter = getLogger('foo', adapter=MockLoggingAdapter)
-    assert type(adapter) == MockLoggingAdapter
-    assert adapter.args[0].name == 'foo'
-
-class MockLoggingAdapter(object):
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
+    record = logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
+    formatter = PyramidFormatter('%(path_qs)s')
+    assert formatter.format(record) == '/p/?foo=bar'

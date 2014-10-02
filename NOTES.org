@@ -1,0 +1,4 @@
+* Rename to pyramid_logformatter or maybe pyramid_log?
+* Rename PyramidFormatter to just Formatter?
+* Make a magic LogRecord.__dict__ which looks up request attributes
+
