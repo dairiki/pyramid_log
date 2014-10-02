@@ -27,7 +27,7 @@ class MockObject(object):
 
 class TestFormatter(object):
     def make_one(self, *args, **kwargs):
-        from pyramid_logger import PyramidFormatter
+        from pyramid_log import PyramidFormatter
         return PyramidFormatter(*args, **kwargs)
 
     def test_with_explicit_request(self, log_record):
@@ -41,7 +41,7 @@ class TestFormatter(object):
 
 class TestReplaceDict(object):
     def make_one(self, obj, d):
-        from pyramid_logger import _ReplaceDict
+        from pyramid_log import _ReplaceDict
         return _ReplaceDict(obj, d)
 
     def test_getattr(self):
@@ -69,7 +69,7 @@ class TestReplaceDict(object):
 
 class TestChainingDict(object):
     def make_one(self, *args, **kwargs):
-        from pyramid_logger import _ChainingDict
+        from pyramid_log import _ChainingDict
         return _ChainingDict(*args, **kwargs)
 
     def test_chained_getitem(self):
@@ -85,7 +85,7 @@ class TestChainingDict(object):
 
 class TestGetitemProxy(object):
     def make_one(self, wrapped):
-        from pyramid_logger import _GetitemProxy
+        from pyramid_log import _GetitemProxy
         return _GetitemProxy(wrapped)
 
     def test_proxy(self):

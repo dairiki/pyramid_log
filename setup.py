@@ -27,7 +27,7 @@ class PyTest(TestCommand):
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args = ['pyramid_logger/tests.py']
+        self.pytest_args = ['pyramid_log/tests.py']
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -41,7 +41,7 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 setup(
-    name='pyramid_logger',
+    name='pyramid_log',
     version=version,
     description="Include pyramid request attributes in your log messages",
     long_description=README + '\n\n' + CHANGES,
@@ -59,7 +59,7 @@ setup(
     keywords="pyramid logging",
     author="Jeff Dairiki",
     author_email="dairiki@dairiki.org",
-    url="http://pypi.python.org/pypi/pyramid_logger/",
+    url="http://pypi.python.org/pypi/pyramid_log/",
     license="BSD",
     packages=find_packages(),
     #include_package_data=True,

@@ -2,7 +2,7 @@
 *.pyc
 __pycache__/
 
-/pyramid_logger.egg-info/
+/pyramid_log.egg-info/
 /build/
 /dist/
 

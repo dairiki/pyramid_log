@@ -20,10 +20,10 @@ class PyramidFormatter(logging.Formatter):
 
         import logging
         import sys
-        import pyramid_logger
+        import pyramid_log
 
         handler = logging.StreamHandler(sys.stderr)
-        handler.setFormatter(pyramid_logger.PyramidFormatter(
+        handler.setFormatter(pyramid_log.PyramidFormatter(
             "%(asctime)s %(request.unauthenticated_userid)s "
             "[%(request.client_addr)s]\\n"
             "  %(request.method)s %(request.path_qs)\\n"
