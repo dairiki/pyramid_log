@@ -1,1 +1,3 @@
 include README.rst CHANGES.rst LICENSE
+include tox.ini
+exclude .travis.yml
