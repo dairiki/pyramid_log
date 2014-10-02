@@ -1,9 +1,10 @@
-###########
-Pyramid-log
-###########
+###############################
+Pyramid-log |build status icon|
+###############################
 
 This package includes a Python logging formatter which makes Pyramid_
 request attributes available for use in its format string.
+
 
 ***************
 Getting Started
@@ -95,6 +96,10 @@ Author
 ******
 
 Jeff Dairiki <dairiki@dairiki.org>
+
+.. |build status icon| image::
+    https://travis-ci.org/dairiki/pyramid_log.svg?branch=master
+    :target: https://travis-ci.org/dairiki/pyramid_log
 
 .. _pyramid:
    http://docs.pylonsproject.org/projects/pyramid/en/latest/
