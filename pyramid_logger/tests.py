@@ -42,15 +42,15 @@ def test_extra_data(pyramid_config):
     from pyramid_logger import extra_data
     pyramid_config.testing_securitypolicy('joe')
     request = Request.blank('http://example.org/p/?foo=bar')
-    extra = extra_data(request)
+    extra = dict(extra_data(request))
     assert str(extra['unauthenticated_userid']) == 'joe'
     assert str(extra['method']) == 'GET'
     assert str(extra['path_qs']) == '/p/?foo=bar'
 
 def test_extra_data_with_no_request():
     from pyramid_logger import extra_data, REQUEST_ATTRIBUTES
-    extra = extra_data(None)
-    assert extra == dict.fromkeys(REQUEST_ATTRIBUTES)
+    extra = set(extra_data(None))
+    assert extra == set((attr, None) for attr in REQUEST_ATTRIBUTES)
 
 class TestPyramidLoggerAdapter(object):
 
