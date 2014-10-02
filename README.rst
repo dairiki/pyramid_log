@@ -12,9 +12,9 @@ Getting Started
 To log the request method and path with all log messages::
 
     import logging
-    from pyramid_log import PyramidFormatter
+    from pyramid_log import Formatter
 
-    fmt = PyramidFormatter(
+    fmt = Formatter(
         '%(asctime)s %(request.method)s %(request.path_qs)s: %(message)s')
 
     logging.basicConfig()
@@ -66,7 +66,7 @@ do something like::
     formatter = pyramid
 
     [formatter_pyramid]
-    class = pyramid_log.PyramidFormatter
+    class = pyramid_log.Formatter
     format = %(asctime)s %(request.method)s %(request.path_qs)s
              %(levename)-5.5s [%(name)s][%(threadName)s] %(message)s
 

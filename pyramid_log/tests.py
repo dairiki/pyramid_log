@@ -27,8 +27,8 @@ class MockObject(object):
 
 class TestFormatter(object):
     def make_one(self, *args, **kwargs):
-        from pyramid_log import PyramidFormatter
-        return PyramidFormatter(*args, **kwargs)
+        from pyramid_log import Formatter
+        return Formatter(*args, **kwargs)
 
     def test_with_explicit_request(self, log_record):
         log_record.request = Request.blank('/', POST={})

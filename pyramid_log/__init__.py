@@ -12,7 +12,7 @@ import logging
 from pyramid.threadlocal import get_current_request
 from zope.proxy import ProxyBase
 
-class PyramidFormatter(logging.Formatter):
+class Formatter(logging.Formatter):
     ''' A logging formatter which makes attributes of the pyramid
     request available for use in its format string.
 
@@ -23,7 +23,7 @@ class PyramidFormatter(logging.Formatter):
         import pyramid_log
 
         handler = logging.StreamHandler(sys.stderr)
-        handler.setFormatter(pyramid_log.PyramidFormatter(
+        handler.setFormatter(pyramid_log.Formatter(
             "%(asctime)s %(request.unauthenticated_userid)s "
             "[%(request.client_addr)s]\\n"
             "  %(request.method)s %(request.path_qs)\\n"
