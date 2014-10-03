@@ -6,10 +6,11 @@ Request Attributes in Log Messages
 
 |version| |py_versions| |py_implementation| |license| |build status|
 
-The `pyramid_log <pypi_>`_ package includes a Python logging formatter which
-makes Pyramid_ request attributes available for use in its format
-string.  The pyramid request has many interesting attributes.  Request
-attributes that might usefully be incorporated into log messages include:
+The `pyramid_log <pypi_>`_ package includes a Python `logging
+formatter`_ which makes Pyramid_ request attributes available for use
+in its format string.  The pyramid request has many interesting
+attributes.  Request attributes that might usefully be incorporated
+into log messages include:
 
 - ``request.method``
 - ``request.url`` (or ``request.path``, ``request.path_qs``, etc…)
@@ -96,9 +97,9 @@ do something like::
     format = %(asctime)s %(request.method)s %(request.path_qs)s
              %(levename)-5.5s [%(name)s][%(threadName)s] %(message)s
 
-See the `pyramid chapter on logging`_ and the docs for the Python
-logging_ module’s `configuration file format`_ for more details on how
-this works.
+Refer to Pyramid’s `chapter on logging`_ and the documentation for the
+Python logging_ module’s `configuration file format`_ for more details
+on how this works.
 
 
 
@@ -134,11 +135,14 @@ Jeff Dairiki <dairiki@dairiki.org>
 .. _pyramid.request:
    http://docs.pylonsproject.org/projects/pyramid/en/latest/api/request.html
 
-.. _pyramid chapter on logging:
+.. _chapter on logging:
    http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/logging.html
 
 .. _logging:
    https://docs.python.org/3/library/logging.html
+
+.. _logging formatter:
+   https://docs.python.org/3/library/logging.html#formatter-objects
 
 .. _configuration file format:
    https://docs.python.org/3/library/logging.config.html#logging-config-fileformat
