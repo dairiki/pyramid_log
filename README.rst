@@ -5,6 +5,14 @@ Pyramid-log |build status icon|
 This package includes a Python logging formatter which makes Pyramid_
 request attributes available for use in its format string.
 
+************
+Installation
+************
+
+The package may be downloaded from pypi_, but it may be easier to
+install using pip::
+
+    pip install pyramid-log
 
 ***************
 Getting Started
@@ -101,13 +109,13 @@ Jeff Dairiki <dairiki@dairiki.org>
     https://travis-ci.org/dairiki/pyramid_log.svg?branch=master
     :target: https://travis-ci.org/dairiki/pyramid_log
 
-.. _pyramid:
-   http://docs.pylonsproject.org/projects/pyramid/en/latest/
+.. _pypi: https://pypi.python.org/pypi/pyramid_log/
+.. _pip: https://pip.pypa.io/en/latest/
+.. _pyramid: http://docs.pylonsproject.org/projects/pyramid/en/latest/
 .. _pyramid.request:
    http://docs.pylonsproject.org/projects/pyramid/en/latest/api/request.html
 .. _pyramid chapter on logging:
    http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/logging.html
-.. _logging:
-   https://docs.python.org/3/library/logging.html
+.. _logging: https://docs.python.org/3/library/logging.html
 .. _configuration file format:
    https://docs.python.org/3/library/logging.config.html#logging-config-fileformat
