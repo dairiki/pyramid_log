@@ -108,3 +108,11 @@ class TestGetitemProxy(object):
         proxy = self.make_one(None)
         assert proxy['foo'] is None
         assert isinstance(proxy, type(None))
+
+    def test_getitem_returns_none_on_exception(self):
+        class Obj(object):
+            @property
+            def err(self):
+                raise RuntimeError()
+        proxy = self.make_one(Obj())
+        assert proxy['err'] is None

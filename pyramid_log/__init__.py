@@ -130,6 +130,9 @@ class _GetitemProxy(ProxyBase):
     """
     def __getitem__(self, key):
         val = self
-        for attr in key.split('.'):
-            val = getattr(val, attr, None)
+        try:
+            for attr in key.split('.'):
+                val = getattr(val, attr)
+        except:
+            val = None
         return val
