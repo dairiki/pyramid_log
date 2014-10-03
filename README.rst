@@ -1,9 +1,26 @@
-###############################
-Pyramid-log |build status icon|
-###############################
+.. -*- coding: utf-8 -*-
 
-This package includes a Python logging formatter which makes Pyramid_
-request attributes available for use in its format string.
+##################################
+Request Attributes in Log Messages
+##################################
+
+|version| |py_versions| |py_implementation| |license| |build status|
+
+The `pyramid_log <pypi_>`_ package includes a Python logging formatter which
+makes Pyramid_ request attributes available for use in its format
+string.  The pyramid request has many interesting attributes.  Request
+attributes that might usefully be incorporated into log messages include:
+
+- ``request.method``
+- ``request.url`` (or ``request.path``, ``request.path_qs``, etc…)
+- ``request.matched_route.name``
+- ``request.unauthenticated_userid``
+- ``request.client_addr``
+- ``request.GET`` (or ``request.POST`` or ``request.params``)
+
+There are many more. See the `pyramid.request`_ documentation for more
+details on what request attributes might be available.
+
 
 ************
 Installation
@@ -105,17 +122,56 @@ Author
 
 Jeff Dairiki <dairiki@dairiki.org>
 
-.. |build status icon| image::
+.. _pypi:
+   https://pypi.python.org/pypi/pyramid_log/
+
+.. _pip:
+   https://pip.pypa.io/en/latest/
+
+.. _pyramid:
+   http://docs.pylonsproject.org/projects/pyramid/en/latest/
+
+.. _pyramid.request:
+   http://docs.pylonsproject.org/projects/pyramid/en/latest/api/request.html
+
+.. _pyramid chapter on logging:
+   http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/logging.html
+
+.. _logging:
+   https://docs.python.org/3/library/logging.html
+
+.. _configuration file format:
+   https://docs.python.org/3/library/logging.config.html#logging-config-fileformat
+
+.. ======================================================================
+   Badges
+   ======================================================================
+
+.. |build status| image::
     https://travis-ci.org/dairiki/pyramid_log.svg?branch=master
     :target: https://travis-ci.org/dairiki/pyramid_log
 
-.. _pypi: https://pypi.python.org/pypi/pyramid_log/
-.. _pip: https://pip.pypa.io/en/latest/
-.. _pyramid: http://docs.pylonsproject.org/projects/pyramid/en/latest/
-.. _pyramid.request:
-   http://docs.pylonsproject.org/projects/pyramid/en/latest/api/request.html
-.. _pyramid chapter on logging:
-   http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/logging.html
-.. _logging: https://docs.python.org/3/library/logging.html
-.. _configuration file format:
-   https://docs.python.org/3/library/logging.config.html#logging-config-fileformat
+.. |downloads| image::
+    https://pypip.in/download/pyramid_log/badge.svg
+    :target: https://pypi.python.org/pypi/pyramid_log/
+    :alt: Downloads
+.. |version| image::
+    https://pypip.in/version/pyramid_log/badge.svg?text=version
+    :target: https://pypi.python.org/pypi/pyramid_log/
+    :alt: Latest Version
+.. |py_versions| image::
+    https://pypip.in/py_versions/pyramid_log/badge.svg
+    :target: https://pypi.python.org/pypi/pyramid_log/
+    :alt: Supported Python versions
+.. |py_implementation| image::
+    https://pypip.in/implementation/pyramid_log/badge.svg
+    :target: https://pypi.python.org/pypi/pyramid_log/
+    :alt: Supported Python versions
+.. |license| image::
+    https://pypip.in/license/pyramid_log/badge.svg
+    :target: https://github.com/dairiki/pyramid_log/blob/master/LICENSE
+    :alt: License
+.. |dev_status| image::
+    https://pypip.in/status/pyramid_log/badge.svg
+    :target: https://pypi.python.org/pypi/pyramid_log/
+    :alt: Development Status
