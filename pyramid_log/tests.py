@@ -39,6 +39,18 @@ class TestFormatter(object):
         formatter = self.make_one('%(request.method)s')
         assert formatter.format(log_record) == 'GET'
 
+    def test_format_called_with_log_disabled(self, log_record):
+        manager = logging.root.manager
+        class MockRequest(object):
+            @property
+            def disable(self):
+                return manager.disable
+        log_record.request = MockRequest()
+        formatter = self.make_one('%(request.disable)s')
+        assert formatter.format(log_record) == '%d' % log_record.levelno
+        # Check that manager.disable is restored
+        assert not manager.disable
+
 class TestReplaceDict(object):
     def make_one(self, obj, d):
         from pyramid_log import _ReplaceDict

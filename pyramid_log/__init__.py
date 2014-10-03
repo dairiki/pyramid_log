@@ -71,7 +71,14 @@ class Formatter(logging.Formatter):
         d = _ChainingDict(record.__dict__)
         d['request'] = _GetitemProxy(request)
 
-        return logging.Formatter.format(self, _ReplaceDict(record, d))
+        # disable logging during disable to prevent recursion
+        # (in case a logged request property generates a log message)
+        save_disable = logging.root.manager.disable
+        logging.disable(record.levelno)
+        try:
+            return logging.Formatter.format(self, _ReplaceDict(record, d))
+        finally:
+            logging.disable(save_disable)
 
 class _ReplaceDict(object):
     """ A minimal object proxy which “replaces” the objects ``__dict__``.
