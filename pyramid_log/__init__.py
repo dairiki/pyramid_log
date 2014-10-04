@@ -54,11 +54,11 @@ class Formatter(logging.Formatter):
     def format(self, record):
         """ Format the specific record as text.
 
-        This version special in that it makes attributes of the
+        This version is special in that it makes attributes of the
         pyramid request available for use in the log message.  For
         example, the request method may be interpolated into the log
-        message by including ``'%(request.method)s'`` within the format
-        string.
+        message by including ``'%(request.method)s'`` within the
+        format string.
 
         See :meth:`logging.Formatter.format` for further details.
 
