@@ -10,11 +10,16 @@ from __future__ import absolute_import
 
 import logging
 from pyramid.threadlocal import get_current_request
-from zope.proxy import ProxyBase
 
-class Formatter(logging.Formatter):
+from . import compat
+
+class Formatter(compat.Formatter):
     ''' A logging formatter which makes attributes of the pyramid
     request available for use in its format string.
+
+    Note that this uses a new-style format string (with replace fields
+    delimited by curly braces ``{}`` rather than the printf-style format
+    string used by :cls:`logging.Formatter`.
 
     Example usage::
 
@@ -24,10 +29,10 @@ class Formatter(logging.Formatter):
 
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(pyramid_log.Formatter(
-            "%(asctime)s %(request.unauthenticated_userid)s "
-            "[%(request.client_addr)s]\\n"
-            "  %(request.method)s %(request.path_qs)\\n"
-            "  %(levelname)s %(message)s"))
+            "{asctime} {request.unauthenticated_userid} "
+            "[{request.client_addr}]\\n"
+            "  {request.method} {request.path_qs}\\n"
+            "  {levelname} {message}"))
         root = logging.getLogger()
         root.addHandler(handler)
         root.warning("Say: %s", "howdy")
@@ -51,32 +56,34 @@ class Formatter(logging.Formatter):
     determine the current request.
 
     '''
+    def __init__(self, fmt=None, datefmt=None, style='{'):
+        compat.Formatter.__init__(self, fmt, datefmt, style)
+
     def format(self, record):
         """ Format the specific record as text.
 
         This version is special in that it makes attributes of the
         pyramid request available for use in the log message.  For
         example, the request method may be interpolated into the log
-        message by including ``'%(request.method)s'`` within the
-        format string.
+        message by including ``{request.method}`` within the format
+        string.
 
         See :meth:`logging.Formatter.format` for further details.
 
         """
-        if hasattr(record, 'request'):
-            request = record.request
-        else:
-            request = get_current_request()
+        if not hasattr(record, 'request'):
+            # Temporarily add request to record's dict.  Out of of
+            # surfeit of paranoia, we do this with a proxy so as to
+            # avoid ever modifying the original log record.
+            d = dict(record.__dict__, request=get_current_request())
+            record = _ReplaceDict(record, d)
 
-        d = _ChainingDict(record.__dict__)
-        d['request'] = _GetitemProxy(request)
-
-        # disable logging during disable to prevent recursion
-        # (in case a logged request property generates a log message)
         save_disable = logging.root.manager.disable
+        # disable logging during formatting to prevent recursion
+        # (in case a logged request property generates a log message)
         logging.disable(record.levelno)
         try:
-            return logging.Formatter.format(self, _ReplaceDict(record, d))
+            return compat.Formatter.format(self, record)
         finally:
             logging.disable(save_disable)
 
@@ -92,54 +99,3 @@ class _ReplaceDict(object):
 
     def __getattr__(self, attr):
         return getattr(self._wrapped, attr)
-
-class _ChainingDict(dict):
-    """ A dict which supports dotted-key chained lookup.
-
-    Example::
-
-        >>> d = ChainingDict({'a': {'b': 'foo'}})
-        >>> d['a.b']                    # same as d['a']['b']
-        'foo'
-
-
-    """
-    def __missing__(self, key):
-        left, dot, right = key.partition('.')
-        if not dot:
-            raise KeyError(key)
-        try:
-            return self[left][right]
-        except KeyError:
-            raise KeyError(key)
-
-class _GetitemProxy(ProxyBase):
-    """ A proxy which adds dict-like read-only access to an object’s
-    attributes.
-
-    Attribute chaining is supported using a dotted-key notation.
-
-    Dictionary access to non-existant attributes returns None.
-
-    Example usage::
-
-        >>> d = GetitemProxy(request)
-
-        >>> d['path']                   # gets request.path
-        u '/foo'
-
-        >>> d['matched_route.name']     # gets request.matched_route.name
-        'foo_route'
-
-        >>> d['unknown_attr']           # Missing attributes => None
-        None
-
-    """
-    def __getitem__(self, key):
-        val = self
-        try:
-            for attr in key.split('.'):
-                val = getattr(val, attr)
-        except:
-            val = None
-        return val

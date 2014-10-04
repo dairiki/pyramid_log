@@ -42,7 +42,7 @@ To log the request method and path with all log messages::
     from pyramid_log import Formatter
 
     fmt = Formatter(
-        '%(asctime)s %(request.method)s %(request.path_qs)s: %(message)s')
+        '{asctime} {request.method} {request.path_qs}: {message}')
 
     logging.basicConfig()
     for handler in logging.getLogger().handlers:
@@ -62,7 +62,7 @@ the format string (using “dotted” keys starting with the prefix
 ``'request.'``.  (Admittedly, for logging purposes, some request
 attributes are more useful than others.)  Adding extra dots to the key
 will get you attributes of request attributes.  For example the
-matched route name is available as ``%(request.matched_route.name)s``.
+matched route name is available as ``{request.matched_route.name}``.
 
 See the `pyramid.request`_ documentation for more details on what request
 attributes might be available.
@@ -94,8 +94,8 @@ do something like::
 
     [formatter_pyramid]
     class = pyramid_log.Formatter
-    format = %(asctime)s %(request.method)s %(request.path_qs)s
-             %(levename)-5.5s [%(name)s][%(threadName)s] %(message)s
+    format = {asctime} {request.method} {request.path_qs}
+             {levename:-5.5} [{name}][{threadName}] {message}
 
 Refer to Pyramid’s `chapter on logging`_ and the documentation for the
 Python logging_ module’s `configuration file format`_ for more details

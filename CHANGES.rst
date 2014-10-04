@@ -2,10 +2,13 @@
 History
 *******
 
-Next Release
-============
+Development Branch (new-style-format-string)
+============================================
 
-No changes.
+Change so that our ``Formatter`` uses a ``str.format`` style format
+string, rather than a printf-style format string.  This greatly
+simplifies the code.
+
 
 Release 0.1.1 (2014-10-02)
 ==========================

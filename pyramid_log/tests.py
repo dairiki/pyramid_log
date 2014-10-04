@@ -32,11 +32,11 @@ class TestFormatter(object):
 
     def test_with_explicit_request(self, log_record):
         log_record.request = Request.blank('/', POST={})
-        formatter = self.make_one('%(request.method)s')
+        formatter = self.make_one('{request.method}')
         assert formatter.format(log_record) == 'POST'
 
     def test_with_threadlocal_request(self, current_request, log_record):
-        formatter = self.make_one('%(request.method)s')
+        formatter = self.make_one('{request.method}')
         assert formatter.format(log_record) == 'GET'
 
     def test_format_called_with_log_disabled(self, log_record):
@@ -46,7 +46,7 @@ class TestFormatter(object):
             def disable(self):
                 return manager.disable
         log_record.request = MockRequest()
-        formatter = self.make_one('%(request.disable)s')
+        formatter = self.make_one('{request.disable}')
         assert formatter.format(log_record) == '%d' % log_record.levelno
         # Check that manager.disable is restored
         assert not manager.disable
@@ -79,52 +79,42 @@ class TestReplaceDict(object):
         proxy = self.make_one(obj, d)
         assert proxy.__dict__ is d
 
-class TestChainingDict(object):
+class TestStrFormatFormatter(object):
     def make_one(self, *args, **kwargs):
-        from pyramid_log import _ChainingDict
-        return _ChainingDict(*args, **kwargs)
+        from .compat import StrFormatFormatter
+        return StrFormatFormatter(*args, **kwargs)
 
-    def test_chained_getitem(self):
-        d = self.make_one({'a': {'b': 'x'}})
-        assert d['a.b'] == 'x'
+    def make_log_record(self, **kwargs):
+        d = dict(name='root',
+                 level=logging.DEBUG,
+                 msg='message',
+                 args=(),
+                 exc_info=None)
+        d.update(kwargs)
+        return logging.makeLogRecord(d)
 
-    def test_key_error(self):
-        d = self.make_one()
-        with pytest.raises(KeyError):
-            d['missing']
-        with pytest.raises(KeyError):
-            d['missing.b']
+    def test_raises_value_error_on_bad_style(self):
+        with pytest.raises(ValueError):
+            self.make_one(style='%')
+        with pytest.raises(ValueError):
+            self.make_one(style='$')
 
-class TestGetitemProxy(object):
-    def make_one(self, wrapped):
-        from pyramid_log import _GetitemProxy
-        return _GetitemProxy(wrapped)
+    def test_format(self):
+        formatter = self.make_one('{goober}')
+        record = self.make_log_record(goober='peanut')
+        assert formatter.format(record) == 'peanut'
 
-    def test_proxy(self):
-        proxy = self.make_one(MockObject(x=1))
-        assert proxy.x == 1
-        assert isinstance(proxy, MockObject)
+    def test_default_fmt(self):
+        formatter = self.make_one()
+        record = self.make_log_record(msg='howdy')
+        assert formatter.format(record) == 'howdy'
 
-    def test_getitem(self):
-        proxy = self.make_one(MockObject(x=42))
-        assert proxy['x'] == 42
-        assert proxy['missing'] is None
+    def test_uses_time(self):
+        assert self.make_one('{asctime}').usesTime()
+        assert self.make_one('{asctime:.4}').usesTime()
+        assert not self.make_one('{facetime}').usesTime()
 
-    def test_chained_attribute_access(self):
-        proxy = self.make_one(MockObject(x=MockObject(y=42)))
-        assert proxy['x.y'] == 42
-        assert proxy['missing.y'] is None
-        assert proxy['x.missing'] is None
-
-    def test_proxy_none(self):
-        proxy = self.make_one(None)
-        assert proxy['foo'] is None
-        assert isinstance(proxy, type(None))
-
-    def test_getitem_returns_none_on_exception(self):
-        class Obj(object):
-            @property
-            def err(self):
-                raise RuntimeError()
-        proxy = self.make_one(Obj())
-        assert proxy['err'] is None
+def test_FormatString():
+    from .compat import _FormatString
+    fs = _FormatString('foo={foo}')
+    assert fs % {'foo': 'x'} == 'foo=x'

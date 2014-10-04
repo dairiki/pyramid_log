@@ -10,11 +10,10 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
-version = "0.1.2dev"
+version = "0.2dev"
 
 install_requires = [
     'pyramid',
-    'zope.proxy',
     ]
 
 tests_require = [
@@ -46,7 +45,7 @@ setup(
     description="Include pyramid request attributes in your log messages",
     long_description=README + '\n\n' + CHANGES,
      classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: BSD License",
