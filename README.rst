@@ -6,7 +6,7 @@ Request Attributes in Log Messages
 
 |version| |py_versions| |py_implementation| |license| |build status|
 
-The `pyramid_log <pypi_>`_ package includes a Python `logging
+The `pyramid_log`_ distribution includes a Python `logging
 formatter`_ which makes Pyramid_ request attributes available for use
 in its format string.  The pyramid request has many interesting
 attributes.  Request attributes that might usefully be incorporated
@@ -27,7 +27,7 @@ details on what request attributes might be available.
 Installation
 ************
 
-The package may be downloaded from pypi_, but it may be easier to
+The distribution may be downloaded from pypi_, but it may be easier to
 install using pip::
 
     pip install pyramid-log
@@ -113,7 +113,7 @@ Development happens at https://github.com/dairiki/pyramid_log/.
 See Also
 ********
 
-The `pyramid_logging`_ package provides similar functionality.
+The `pyramid_logging`_ distribution provides similar functionality.
 
 .. _pyramid_logging: https://pypi.python.org/pypi/pyramid_logging
 
@@ -125,6 +125,7 @@ Jeff Dairiki <dairiki@dairiki.org>
 
 .. _pypi:
    https://pypi.python.org/pypi/pyramid_log/
+.. _pyramid_log: pypi_
 
 .. _pip:
    https://pip.pypa.io/en/latest/
