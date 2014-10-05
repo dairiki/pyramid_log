@@ -152,7 +152,7 @@ Jeff Dairiki <dairiki@dairiki.org>
    ======================================================================
 
 .. |build status| image::
-    https://travis-ci.org/dairiki/pyramid_log.svg?branch=master
+    https://travis-ci.org/dairiki/pyramid_log.svg?branch=new-style-format-string
     :target: https://travis-ci.org/dairiki/pyramid_log
 
 .. |downloads| image::
