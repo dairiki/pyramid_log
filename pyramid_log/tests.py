@@ -109,6 +109,11 @@ class TestStrFormatFormatter(object):
         record = self.make_log_record(msg='howdy')
         assert formatter.format(record) == 'howdy'
 
+    def test_format_time(self):
+        formatter = self.make_one('{asctime}', 'DATEFMT')
+        record = self.make_log_record()
+        assert formatter.format(record) == 'DATEFMT'
+
     def test_uses_time(self):
         assert self.make_one('{asctime}').usesTime()
         assert self.make_one('{asctime:.4}').usesTime()

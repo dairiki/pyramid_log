@@ -36,6 +36,12 @@ class StrFormatFormatter(logging.Formatter):
     def usesTime(self):
         return self._fmt.find('{asctime') >= 0
 
+    def format(self, record):
+        if self.usesTime():
+            record.asctime = self.formatTime(record, self.datefmt)
+        return logging.Formatter.format(self, record)
+
+
 class _FormatString(text_type):
     """ Use new-style format strings where printf-style strings are expected.
 
