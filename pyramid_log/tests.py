@@ -102,7 +102,7 @@ class TestMissing(object):
         assert MISSING.foo is MISSING
 
 _zp_flavors = ['default']
-if zope.proxy.ProxyBase is not zope.proxy.PyProxyBase:
+if zope.proxy.ProxyBase is not zope.proxy.PyProxyBase: # pragma: no branch
     _zp_flavors.append('pure python')
 
 @pytest.fixture(params=_zp_flavors)
