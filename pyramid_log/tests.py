@@ -4,11 +4,15 @@
 #
 from __future__ import absolute_import
 
+from functools import partial
+import imp
 import logging
+import sys
 
 from pyramid.request import Request
 from pyramid import testing
 import pytest
+import zope.proxy
 
 @pytest.fixture
 def current_request(request):
@@ -97,18 +101,37 @@ class TestMissing(object):
         MISSING = self.MISSING
         assert MISSING.foo is MISSING
 
-class TestMissingAttrProxy(object):
-    def make_one(self, obj, *args, **kwargs):
-        from pyramid_log import _MissingAttrProxy
-        return _MissingAttrProxy(obj, *args, **kwargs)
+_zp_flavors = ['default']
+if zope.proxy.ProxyBase is not zope.proxy.PyProxyBase:
+    _zp_flavors.append('pure python')
 
-    def test_missing_attr(self):
-        proxy = self.make_one(MockObject(x=42), 13)
+@pytest.fixture(params=_zp_flavors)
+def zope_proxy_flavors(request, monkeypatch):
+    """ Test both with unpatched zope.proxy and with zope.proxy patched
+    to use its pure python implementations.
+
+    """
+    if request.param == 'pure python':
+        pattr = monkeypatch.setattr
+        pattr(zope.proxy, 'ProxyBase', zope.proxy.PyProxyBase)
+        for name in dir(zope.proxy):
+            if name.startswith('py_'):
+                pattr(zope.proxy, name[3:], getattr(zope.proxy, name))
+
+class TestMissingAttrProxy(object):
+    @pytest.fixture
+    def _MissingAttrProxy(self, zope_proxy_flavors):
+        pyramid_log = imp.load_module('pyramid_log',
+                                      *imp.find_module('pyramid_log'))
+        return pyramid_log._MissingAttrProxy
+
+    def test_missing_attr(self, _MissingAttrProxy):
+        proxy = _MissingAttrProxy(MockObject(x=42), 13)
         assert proxy.x == 42
         assert proxy.y == 13
 
-    def test_wraps_attrs(self):
-        proxy = self.make_one(MockObject(x=42), 13)
+    def test_wraps_attrs(self, _MissingAttrProxy):
+        proxy = _MissingAttrProxy(MockObject(x=42), 13)
         assert proxy.x.y == 13
         assert proxy.x.x == 13
 
