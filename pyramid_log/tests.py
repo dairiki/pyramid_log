@@ -118,22 +118,13 @@ def zope_proxy_flavors(request, monkeypatch):
             if name.startswith('py_'):
                 pattr(zope.proxy, name[3:], getattr(zope.proxy, name))
 
-class TestMissingAttrProxy(object):
-    @pytest.fixture
-    def _MissingAttrProxy(self, zope_proxy_flavors):
-        pyramid_log = imp.load_module('pyramid_log',
-                                      *imp.find_module('pyramid_log'))
-        return pyramid_log._MissingAttrProxy
-
-    def test_missing_attr(self, _MissingAttrProxy):
-        proxy = _MissingAttrProxy(MockObject(x=42), 13)
-        assert proxy.x == 42
-        assert proxy.y == 13
-
-    def test_wraps_attrs(self, _MissingAttrProxy):
-        proxy = _MissingAttrProxy(MockObject(x=42), 13)
-        assert proxy.x.y == 13
-        assert proxy.x.x == 13
+def test_MissingAttrProxy(zope_proxy_flavors):
+    pyramid_log = imp.load_module('pyramid_log',
+                                  *imp.find_module('pyramid_log'))
+    proxy = pyramid_log._MissingAttrProxy(MockObject(x=42))
+    assert proxy.x == 42
+    assert proxy.y is pyramid_log.MISSING
+    assert proxy.x.y is pyramid_log.MISSING
 
 class TestStrFormatFormatter(object):
     def make_one(self, *args, **kwargs):

@@ -119,25 +119,14 @@ class _MissingAttrProxy(ProxyBase):
     """ A minimal object proxy which returns a value for missing attributes.
 
     """
-    __slots__ = ('_missing',)
-
-    def __new__(typ, wrapped, missing=MISSING):
-        inst = ProxyBase.__new__(typ, wrapped)
-        typ._missing.__set__(inst, missing)
-        return inst
-
-    def __init__(self, wrapped, missing=MISSING):
-        self._missing = missing
-
     def __getattribute__(self, attr):
         if attr == '_wrapped':
             # prevent recursive trap when pure python version of
             # ProxyBase is in use (e.g. pypy)
             return ProxyBase.__getattribute__(self, attr)
-        missing = object.__getattribute__(self, '_missing')
         try:
             rv = getattr(getProxiedObject(self), attr)
         except AttributeError:
-            return missing
+            return MISSING
         else:
-            return type(self)(rv, missing)
+            return type(self)(rv)
