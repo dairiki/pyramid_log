@@ -10,10 +10,11 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
-version = "0.2dev1"
+version = "0.2dev2"
 
 install_requires = [
     'pyramid',
+    'zope.proxy',
     ]
 
 tests_require = [

@@ -39,6 +39,11 @@ class TestFormatter(object):
         formatter = self.make_one('{request.method}')
         assert formatter.format(log_record) == 'GET'
 
+    def test_with_no_request(self, log_record):
+        log_record.request = None
+        formatter = self.make_one('{request.method}')
+        assert formatter.format(log_record) == '-'
+
     def test_format_called_with_log_disabled(self, log_record):
         manager = logging.root.manager
         class MockRequest(object):
@@ -78,6 +83,34 @@ class TestReplaceDict(object):
         d = {}
         proxy = self.make_one(obj, d)
         assert proxy.__dict__ is d
+
+class TestMissing(object):
+    @property
+    def MISSING(self):
+        from pyramid_log import MISSING
+        return MISSING
+
+    def test_format(self):
+        assert "{0}".format(self.MISSING) == '-'
+
+    def test_getattr(self):
+        MISSING = self.MISSING
+        assert MISSING.foo is MISSING
+
+class TestMissingAttrProxy(object):
+    def make_one(self, obj, *args, **kwargs):
+        from pyramid_log import _MissingAttrProxy
+        return _MissingAttrProxy(obj, *args, **kwargs)
+
+    def test_missing_attr(self):
+        proxy = self.make_one(MockObject(x=42), 13)
+        assert proxy.x == 42
+        assert proxy.y == 13
+
+    def test_wraps_attrs(self):
+        proxy = self.make_one(MockObject(x=42), 13)
+        assert proxy.x.y == 13
+        assert proxy.x.x == 13
 
 class TestStrFormatFormatter(object):
     def make_one(self, *args, **kwargs):

@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import logging
 from pyramid.threadlocal import get_current_request
+from zope.proxy import ProxyBase, getProxiedObject
 
 from . import compat
 
@@ -71,12 +72,17 @@ class Formatter(compat.Formatter):
         See :meth:`logging.Formatter.format` for further details.
 
         """
-        if not hasattr(record, 'request'):
-            # Temporarily add request to record's dict.  Out of of
-            # surfeit of paranoia, we do this with a proxy so as to
-            # avoid ever modifying the original log record.
-            d = dict(record.__dict__, request=get_current_request())
-            record = _ReplaceDict(record, d)
+        try:
+            request = record.request
+        except AttributeError:
+            request = get_current_request()
+
+        request_proxy = _MissingAttrProxy(request)
+        # Temporarily add request to record's dict.  Out of of
+        # surfeit of paranoia, we do this with a proxy so as to
+        # avoid ever modifying the original log record.
+        d = dict(record.__dict__, request=request_proxy)
+        record = _ReplaceDict(record, d)
 
         save_disable = logging.root.manager.disable
         # disable logging during formatting to prevent recursion
@@ -99,3 +105,34 @@ class _ReplaceDict(object):
 
     def __getattr__(self, attr):
         return getattr(self._wrapped, attr)
+
+class _Missing(object):
+    def __format__(self, format_spec):
+        return '-'
+
+    def __getattr__(self, attr):
+        return self
+
+MISSING = _Missing()
+
+class _MissingAttrProxy(ProxyBase):
+    """ A minimal object proxy which returns a value for missing attributes.
+
+    """
+    __slots__ = ['_missing', '_wrapped']
+
+    def __new__(typ, wrapped, missing=MISSING):
+        return ProxyBase.__new__(typ, wrapped)
+
+    def __init__(self, wrapped, missing=MISSING):
+        self._missing = missing
+
+    def __getattribute__(self, attr):
+        wrapped = getProxiedObject(self)
+        missing = ProxyBase.__getattribute__(self, '_missing')
+        try:
+            rv = getattr(wrapped, attr)
+        except AttributeError:
+            return missing
+        else:
+            return type(self)(rv, missing)
