@@ -95,7 +95,7 @@ do something like::
     [formatter_pyramid]
     class = pyramid_log.Formatter
     format = %(asctime)s %(request.method)s %(request.path_qs)s
-             %(levename)-5.5s [%(name)s][%(threadName)s] %(message)s
+             %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
 
 Refer to Pyramid’s `chapter on logging`_ and the documentation for the
 Python logging_ module’s `configuration file format`_ for more details
