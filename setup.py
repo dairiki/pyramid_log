@@ -14,7 +14,6 @@ version = "0.1.2dev"
 
 install_requires = [
     'pyramid',
-    'zope.proxy',
     ]
 
 tests_require = [

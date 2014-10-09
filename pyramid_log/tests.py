@@ -5,7 +5,9 @@
 from __future__ import absolute_import
 
 import logging
+import math
 
+from pyramid.compat import NativeIO, text_
 from pyramid.request import Request
 from pyramid import testing
 import pytest
@@ -16,6 +18,39 @@ def current_request(request):
     config = testing.setUp(request=r)
     request.addfinalizer(testing.tearDown)
     return r
+
+class TestIntegration(object):
+    """ Integration tests.
+
+    """
+    @pytest.fixture
+    def logstream(self, monkeypatch):
+        """ Patch the root logger to log to an in-memory stream.
+        """
+        import pyramid_log
+        logstream = NativeIO()
+        root = logging.getLogger()
+        monkeypatch.setattr(root, 'handlers', [])
+        handler = logging.StreamHandler(logstream)
+        fmt = ("%(asctime)s "
+               "%(request.method|-)s %(request.path_qs|-)s : "
+               "%(message)s")
+        formatter = pyramid_log.Formatter(fmt, datefmt="<DATE>")
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+        return logstream
+
+    def test_with_request(self, logstream, current_request):
+        current_request.GET['foo'] = 'bar'
+        current_request.path_info = '/path'
+        logger = logging.getLogger()
+        logger.warn("testing")
+        assert logstream.getvalue() == "<DATE> GET /path?foo=bar : testing\n"
+
+    def test_without_request(self, logstream):
+        logger = logging.getLogger()
+        logger.warn("is this thing on?")
+        assert logstream.getvalue() == "<DATE> - - : is this thing on?\n"
 
 @pytest.fixture
 def log_record():
@@ -38,6 +73,10 @@ class TestFormatter(object):
     def test_with_threadlocal_request(self, current_request, log_record):
         formatter = self.make_one('%(request.method)s')
         assert formatter.format(log_record) == 'GET'
+
+    def test_format_asctime(self, current_request, log_record):
+        formatter = self.make_one('asctime=%(asctime)s', datefmt="DATEFMT")
+        assert formatter.format(log_record) == 'asctime=DATEFMT'
 
     def test_format_called_with_log_disabled(self, log_record):
         manager = logging.root.manager
@@ -79,52 +118,64 @@ class TestReplaceDict(object):
         proxy = self.make_one(obj, d)
         assert proxy.__dict__ is d
 
-class TestChainingDict(object):
+class TestMissing(object):
+    def make_one(self, strval):
+        from pyramid_log import Missing
+        return Missing(strval)
+
+    def test_repr(self):
+        missing = self.make_one("foo")
+        assert repr(missing) == "Missing('foo')"
+
+    def test_repr_unicode_strval(self):
+        # carefully constructed to work in python 3.2
+        euro_sign = text_('\N{EURO SIGN}', 'unicode-escape')
+        missing = self.make_one(euro_sign)
+        assert repr(missing) in (
+            r"Missing(u'\u20ac')",       # py2
+            "Missing('%s')" % euro_sign, # py3k
+            )
+
+    def test_str(self):
+        missing = self.make_one("foo")
+        assert str(missing) == "foo"
+
+    @pytest.mark.parametrize('strval, expected', [
+        ('123', 123),
+        ('foo', 0),
+        ])
+    def test_int(self, strval, expected):
+        missing = self.make_one(strval)
+        assert int(missing) == expected
+
+    @pytest.mark.parametrize('strval, expected', [
+        ('123', 123.0),
+        ('3.14', 3.14),
+        ])
+    def test_float(self, strval, expected):
+        missing = self.make_one(strval)
+        assert float(missing) == expected
+
+    def test_float_nan(self):
+        missing = self.make_one('foo')
+        assert math.isnan(float(missing))
+
+class TestMagicDict(object):
     def make_one(self, *args, **kwargs):
-        from pyramid_log import _ChainingDict
-        return _ChainingDict(*args, **kwargs)
+        from pyramid_log import _MagicDict
+        return _MagicDict(*args, **kwargs)
 
     def test_chained_getitem(self):
-        d = self.make_one({'a': {'b': 'x'}})
+        d = self.make_one({'a': MockObject(b='x')})
         assert d['a.b'] == 'x'
 
-    def test_key_error(self):
-        d = self.make_one()
-        with pytest.raises(KeyError):
-            d['missing']
-        with pytest.raises(KeyError):
-            d['missing.b']
+    def test_fallback(self):
+        d = self.make_one({'a': MockObject(b='x')})
+        assert str(d['c|rats']) == 'rats'
+        assert str(d['a.c|rats']) == 'rats'
+        assert str(d['a.b.c|rats']) == 'rats'
 
-class TestGetitemProxy(object):
-    def make_one(self, wrapped):
-        from pyramid_log import _GetitemProxy
-        return _GetitemProxy(wrapped)
-
-    def test_proxy(self):
-        proxy = self.make_one(MockObject(x=1))
-        assert proxy.x == 1
-        assert isinstance(proxy, MockObject)
-
-    def test_getitem(self):
-        proxy = self.make_one(MockObject(x=42))
-        assert proxy['x'] == 42
-        assert proxy['missing'] is None
-
-    def test_chained_attribute_access(self):
-        proxy = self.make_one(MockObject(x=MockObject(y=42)))
-        assert proxy['x.y'] == 42
-        assert proxy['missing.y'] is None
-        assert proxy['x.missing'] is None
-
-    def test_proxy_none(self):
-        proxy = self.make_one(None)
-        assert proxy['foo'] is None
-        assert isinstance(proxy, type(None))
-
-    def test_getitem_returns_none_on_exception(self):
-        class Obj(object):
-            @property
-            def err(self):
-                raise RuntimeError()
-        proxy = self.make_one(Obj())
-        assert proxy['err'] is None
+    def test_default_fallback(self):
+        d = self.make_one({'a': MockObject(b='x')})
+        assert str(d['missing-key']) == '?missing-key?'
+        assert str(d['a.missing-key']) == '?a.missing-key?'

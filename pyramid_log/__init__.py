@@ -9,8 +9,9 @@ for use in log messages.
 from __future__ import absolute_import
 
 import logging
+import sys
+from pyramid.compat import PY3, native_, text_type
 from pyramid.threadlocal import get_current_request
-from zope.proxy import ProxyBase
 
 class Formatter(logging.Formatter):
     ''' A logging formatter which makes attributes of the pyramid
@@ -63,20 +64,20 @@ class Formatter(logging.Formatter):
         See :meth:`logging.Formatter.format` for further details.
 
         """
-        if hasattr(record, 'request'):
-            request = record.request
-        else:
-            request = get_current_request()
+        d = _MagicDict(record.__dict__)
+        if not hasattr(record, 'request'):
+            d['request'] = get_current_request()
+        # Owing to a surfeit of multi-thread angst, instead of
+        # directly replacing record.__dict__, we do this with a proxy
+        # so as to avoid ever modifying the original log record.
+        record = _ReplaceDict(record, d)
 
-        d = _ChainingDict(record.__dict__)
-        d['request'] = _GetitemProxy(request)
-
-        # disable logging during disable to prevent recursion
-        # (in case a logged request property generates a log message)
+        # Disable logging during disable to prevent recursion (in case
+        # a logged request property generates a log message)
         save_disable = logging.root.manager.disable
         logging.disable(record.levelno)
         try:
-            return logging.Formatter.format(self, _ReplaceDict(record, d))
+            return logging.Formatter.format(self, record)
         finally:
             logging.disable(save_disable)
 
@@ -93,53 +94,72 @@ class _ReplaceDict(object):
     def __getattr__(self, attr):
         return getattr(self._wrapped, attr)
 
-class _ChainingDict(dict):
-    """ A dict which supports dotted-key chained lookup.
+class Missing(object):
+    def __init__(self, strval):
+        self.strval = text_type(strval)
+
+    def __repr__(self):
+        strval = self.strval
+        try:
+            # Do this to avoid the anoying u in the Missing(u'foo')
+            strval = native_(strval, 'ascii')
+        except UnicodeEncodeError:
+            pass
+        return '%s(%r)' % (self.__class__.__name__, strval)
+
+    def __str__(self):
+        return self.strval
+
+    if not PY3:                         # pragma: no branch
+        __unicode__ = __str__
+
+        def __str__(self):
+            encoding = sys.getdefaultencoding()
+            return self.__unicode__().encode(encoding, 'replace')
+
+    def __int__(self):
+        try:
+            return int(self.strval)
+        except ValueError:
+            return 0
+
+    def __float__(self):
+        try:
+            return float(self.strval)
+        except ValueError:
+            return float('NaN')
+
+_marker = object()
+
+class _MagicDict(dict):
+    """ A dict which supports dotted-key chained lookup, with fallbacks
+    if the lookup fails.
 
     Example::
 
-        >>> d = ChainingDict({'a': {'b': 'foo'}})
+        >>> d = _MagicDict({'a': {'b': 'foo'}})
         >>> d['a.b']                    # same as d['a']['b']
         'foo'
 
+    Fallback values are appended after a pipe (``|``)::
 
-    """
-    def __missing__(self, key):
-        left, dot, right = key.partition('.')
-        if not dot:
-            raise KeyError(key)
-        try:
-            return self[left][right]
-        except KeyError:
-            raise KeyError(key)
-
-class _GetitemProxy(ProxyBase):
-    """ A proxy which adds dict-like read-only access to an object’s
-    attributes.
-
-    Attribute chaining is supported using a dotted-key notation.
-
-    Dictionary access to non-existant attributes returns None.
-
-    Example usage::
-
-        >>> d = GetitemProxy(request)
-
-        >>> d['path']                   # gets request.path
-        u '/foo'
-
-        >>> d['matched_route.name']     # gets request.matched_route.name
-        'foo_route'
-
-        >>> d['unknown_attr']           # Missing attributes => None
-        None
+        >>> d['a.b|fb']                 # same as d['a']['b']
+        'foo'
+        >>> d['a.z|fb']                 # there is non d['a']['z']
+        'fb'
 
     """
     def __getitem__(self, key):
-        val = self
+        key, pipe, fallback = key.partition('|')
+        if not pipe:
+            fallback = '?%s?' % key
+        parts = key.split('.')
         try:
-            for attr in key.split('.'):
-                val = getattr(val, attr)
-        except:
-            val = None
-        return val
+            v = dict.__getitem__(self, parts[0])
+            for i, part in enumerate(parts[1:]):
+                a = getattr(v, part, _marker)
+                v = a if a is not _marker else v[part]
+        except (LookupError, TypeError):
+            return Missing(fallback)
+        else:
+            return v

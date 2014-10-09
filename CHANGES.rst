@@ -5,7 +5,8 @@ History
 Next Release
 ============
 
-No changes.
+- A fallback value notation has been added which can be used to provide
+  values to be logged if the named keys or attributes are not available.
 
 Release 0.1.1 (2014-10-02)
 ==========================

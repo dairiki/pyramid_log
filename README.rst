@@ -22,6 +22,9 @@ into log messages include:
 There are many more. See the `pyramid.request`_ documentation for more
 details on what request attributes might be available.
 
+The formatter also supports an syntax for providing fallback values to
+use in case there is no request, or the request is missing the named
+attribute.
 
 ************
 Installation
@@ -42,7 +45,7 @@ To log the request method and path with all log messages::
     from pyramid_log import Formatter
 
     fmt = Formatter(
-        '%(asctime)s %(request.method)s %(request.path_qs)s: %(message)s')
+        '%(asctime)s %(request.method|-)s %(request.path_qs|-)s: %(message)s')
 
     logging.basicConfig()
     for handler in logging.getLogger().handlers:
@@ -57,12 +60,20 @@ you’ll get a log message like::
 
     2014-10-01 17:55:02,001 GET /path?arg=foo: I say howdy!
 
+If there is no current request when you log your message, instead, you'll
+get something like::
+
+    2014-10-01 17:55:02,001 - -: I say howdy!
+
 All attributes of the current pyramid request are available for use in
 the format string (using “dotted” keys starting with the prefix
 ``'request.'``.  (Admittedly, for logging purposes, some request
 attributes are more useful than others.)  Adding extra dots to the key
 will get you attributes of request attributes.  For example the
 matched route name is available as ``%(request.matched_route.name)s``.
+
+(Dots will try key lookup if attribute lookup fails, so one can get at
+values in ``dict``\s as well.)
 
 See the `pyramid.request`_ documentation for more details on what request
 attributes might be available.
@@ -94,7 +105,7 @@ do something like::
 
     [formatter_pyramid]
     class = pyramid_log.Formatter
-    format = %(asctime)s %(request.method)s %(request.path_qs)s
+    format = %(asctime)s %(request.method|no request)s %(request.path_qs|)s
              %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
 
 Refer to Pyramid’s `chapter on logging`_ and the documentation for the
