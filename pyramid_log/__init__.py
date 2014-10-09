@@ -64,66 +64,84 @@ class Formatter(logging.Formatter):
         See :meth:`logging.Formatter.format` for further details.
 
         """
-        d = _MagicDict(record.__dict__)
-        if not hasattr(record, 'request'):
-            d['request'] = get_current_request()
-        # Owing to a surfeit of multi-thread angst, instead of
-        # directly replacing record.__dict__, we do this with a proxy
-        # so as to avoid ever modifying the original log record.
-        record = _ReplaceDict(record, d)
+        has_record = hasattr(record, 'request')
+        if not has_record:
+            record.request = get_current_request()
+
+        # Apply magic: this makes it so that
+        #
+        #    magic_record.__dict__['foo.bar|f']
+        #
+        # is rougly equivalent to:
+        #
+        #    getattr(record.__dict__.get('foo'), 'bar', 'f')
+        #
+        magic_record = _WrapDict(record, _DottedLookup)
 
         # Disable logging during disable to prevent recursion (in case
         # a logged request property generates a log message)
         save_disable = logging.root.manager.disable
         logging.disable(record.levelno)
         try:
-            return logging.Formatter.format(self, record)
+            return logging.Formatter.format(self, magic_record)
         finally:
             logging.disable(save_disable)
+            if not has_record:
+                del record.request
 
-class _ReplaceDict(object):
-    """ A minimal object proxy which “replaces” the objects ``__dict__``.
+class _WrapDict(object):
+    """ An object proxy which provides a “wrapped” of the proxied
+    object’s ``__dict__``.
 
     """
-    __slots__ = ['dict', 'wrapped']
+    __slots__ = ['_obj', '_dict_wrapper']
 
-    def __init__(self, wrapped, dict_):
-        object.__setattr__(self, 'wrapped', wrapped)
-        object.__setattr__(self, 'dict', dict_)
+    def __init__(self, obj, dict_wrapper):
+        self._obj = obj
+        self._dict_wrapper = dict_wrapper
 
-    def __getattribute__(self, attr):
-        dict_ = object.__getattribute__(self, 'dict')
-        if attr == '__dict__':
-            return dict_
-        elif attr in dict_:
-            return dict_[attr]
-        else:
-            wrapped = object.__getattribute__(self, 'wrapped')
-            return getattr(wrapped, attr)
+    @property
+    def __dict__(self):
+        return self._dict_wrapper(self._obj.__dict__)
+
+    def __getattr__(self, attr):
+        return getattr(self._obj, attr)
 
     def __setattr__(self, attr, value):
-        dict_ = object.__getattribute__(self, 'dict')
-        dict_[attr] = value
+        if attr in self.__slots__:
+            object.__setattr__(self, attr, value)
+        else:
+            setattr(self._obj, attr, value)
 
     def __delattr__(self, attr):
-        raise NotImplementedError()
+        return delattr(self._obj, attr)
 
 
 class Missing(object):
-    def __init__(self, strval):
-        self.strval = text_type(strval)
+    """ Returned for missing keys.
+
+    This has decent values upon conversion to various types, making
+    is usable by printf-style format strings without error.
+
+    """
+    def __init__(self, key, fallback=None):
+        self.key = key
+        self.fallback = fallback
 
     def __repr__(self):
-        strval = self.strval
+        key = self.key
         try:
             # Do this to avoid the anoying u in the Missing(u'foo')
-            strval = native_(strval, 'ascii')
+            key = native_(key, 'ascii')
         except UnicodeEncodeError:
             pass
-        return '%s(%r)' % (self.__class__.__name__, strval)
+        return '<%s: %r>' % (self.__class__.__name__, key)
 
     def __str__(self):
-        return self.strval
+        fallback = self.fallback
+        if fallback is None:
+            fallback = '?%s?' % self.key
+        return fallback
 
     if not PY3:                         # pragma: no branch
         __unicode__ = __str__
@@ -132,22 +150,32 @@ class Missing(object):
             encoding = sys.getdefaultencoding()
             return self.__unicode__().encode(encoding, 'replace')
 
+    _int_fallback = 0
+
     def __int__(self):
+        fallback = self.fallback
+        if fallback is None:
+            return self._int_fallback
         try:
-            return int(self.strval)
+            return int(fallback)
         except ValueError:
-            return 0
+            return self._int_fallback
+
+    _float_fallback = float('NaN')
 
     def __float__(self):
+        fallback = self.fallback
+        if fallback is None:
+            return self._float_fallback
         try:
-            return float(self.strval)
+            return float(fallback)
         except ValueError:
-            return float('NaN')
+            return self._float_fallback
 
 _marker = object()
 
-class _MagicDict(dict):
-    """ A dict which supports dotted-key chained lookup, with fallbacks
+class _DottedLookup(object):
+    """ A dict which supports dotted-key chained lookup, with fallback
     if the lookup fails.
 
     Example::
@@ -164,17 +192,20 @@ class _MagicDict(dict):
         'fb'
 
     """
+    def __init__(self, dict_):
+        self.dict = dict_
+
     def __getitem__(self, key):
         key, pipe, fallback = key.partition('|')
         if not pipe:
-            fallback = '?%s?' % key
+            fallback = None
         parts = key.split('.')
         try:
-            v = dict.__getitem__(self, parts[0])
+            v = self.dict[parts[0]]
             for i, part in enumerate(parts[1:]):
                 a = getattr(v, part, _marker)
                 v = a if a is not _marker else v[part]
         except (LookupError, TypeError):
-            return Missing(fallback)
+            return Missing(key, fallback)
         else:
             return v

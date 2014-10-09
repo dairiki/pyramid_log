@@ -60,6 +60,10 @@ class MockObject(object):
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
+class MockWrapper(object):
+    def __init__(self, d):
+        self.wrapped = d
+
 class TestFormatter(object):
     def make_one(self, *args, **kwargs):
         from pyramid_log import Formatter
@@ -69,10 +73,12 @@ class TestFormatter(object):
         log_record.request = Request.blank('/', POST={})
         formatter = self.make_one('%(request.method)s')
         assert formatter.format(log_record) == 'POST'
+        assert hasattr(log_record, 'request')
 
     def test_with_threadlocal_request(self, current_request, log_record):
         formatter = self.make_one('%(request.method)s')
         assert formatter.format(log_record) == 'GET'
+        assert not hasattr(log_record, 'request')
 
     def test_format_asctime(self, current_request, log_record):
         formatter = self.make_one('asctime=%(asctime)s', datefmt="DATEFMT")
@@ -90,81 +96,107 @@ class TestFormatter(object):
         # Check that manager.disable is restored
         assert not manager.disable
 
-class TestReplaceDict(object):
-    def make_one(self, obj, d):
-        from pyramid_log import _ReplaceDict
-        return _ReplaceDict(obj, d)
+class TestWrapDict(object):
+    def make_one(self, obj, dictwrapper):
+        from pyramid_log import _WrapDict
+        return _WrapDict(obj, dictwrapper)
+
+    def test_dict(self):
+        obj = MockObject()
+        proxy = self.make_one(obj, MockWrapper)
+        dict_ = proxy.__dict__
+        assert type(proxy.__dict__) is MockWrapper
+        assert proxy.__dict__.wrapped is obj.__dict__
 
     def test_getattr(self):
         class Obj(object):
             def m(self):
                 return 'foo'
-        obj = Obj()
-        d = {'x': 'bar'}
-        proxy = self.make_one(obj, d)
+            x = 'bar'
+        proxy = self.make_one(Obj(), MockWrapper)
         assert proxy.m() == 'foo'
         assert proxy.x == 'bar'
-        assert proxy.__dict__ is d
+        with pytest.raises(AttributeError):
+            proxy.y
 
-    def test_setattr_modifies_proxy(self):
+    def test_setattr(self):
         obj = MockObject(x='orig')
-        d = {}
-        proxy = self.make_one(obj, d)
+        proxy = self.make_one(obj, MockWrapper)
         proxy.x = 'changed'
-        assert d['x'] == 'changed'
-        assert obj.x == 'orig'
+        assert proxy.x == 'changed'
+        assert obj.x == 'changed'
+        proxy.y = 'changed'
+        assert proxy.y == 'changed'
+        assert obj.y == 'changed'
 
-    def test_delattr_not_supported(self):
-        proxy = self.make_one(object(), {'x': 1})
-        with pytest.raises(NotImplementedError):
-            del proxy.x
+    def test_delattr(self):
+        obj = MockObject(x='orig')
+        proxy = self.make_one(obj, MockWrapper)
+        del proxy.x
+        assert obj.__dict__ == {}
 
 class TestMissing(object):
-    def make_one(self, strval):
+    def make_one(self, key, fallback=None):
         from pyramid_log import Missing
-        return Missing(strval)
+        return Missing(key, fallback)
 
     def test_repr(self):
         missing = self.make_one("foo")
-        assert repr(missing) == "Missing('foo')"
+        assert repr(missing) == "<Missing: 'foo'>"
 
-    def test_repr_unicode_strval(self):
+    def test_repr_unicode_key(self):
         # carefully constructed to work in python 3.2
         euro_sign = text_('\N{EURO SIGN}', 'unicode-escape')
         missing = self.make_one(euro_sign)
         assert repr(missing) in (
-            r"Missing(u'\u20ac')",       # py2
-            "Missing('%s')" % euro_sign, # py3k
+            r"<Missing: u'\u20ac'>",      # py2
+            "<Missing: '%s'>" % euro_sign, # py3k
             )
 
     def test_str(self):
-        missing = self.make_one("foo")
+        missing = self.make_one('key', "foo")
         assert str(missing) == "foo"
 
-    @pytest.mark.parametrize('strval, expected', [
+    @pytest.mark.parametrize('fallback, expected', [
+        (None, 0),
         ('123', 123),
         ('foo', 0),
         ])
-    def test_int(self, strval, expected):
-        missing = self.make_one(strval)
+    def test_int(self, fallback, expected):
+        missing = self.make_one('somekey', fallback)
         assert int(missing) == expected
 
-    @pytest.mark.parametrize('strval, expected', [
+    @pytest.mark.parametrize('fallback, expected', [
         ('123', 123.0),
         ('3.14', 3.14),
         ])
-    def test_float(self, strval, expected):
-        missing = self.make_one(strval)
+    def test_float(self, fallback, expected):
+        missing = self.make_one('somekey', fallback)
         assert float(missing) == expected
 
-    def test_float_nan(self):
-        missing = self.make_one('foo')
+    def test_float_default_fallback(self):
+        missing = self.make_one('somekey', None)
         assert math.isnan(float(missing))
 
-class TestMagicDict(object):
-    def make_one(self, *args, **kwargs):
-        from pyramid_log import _MagicDict
-        return _MagicDict(*args, **kwargs)
+    def test_float_not_a_number(self):
+        missing = self.make_one('somekey', 'notanumber')
+        assert math.isnan(float(missing))
+
+    @pytest.mark.parametrize('fallback, asint, asfloat', [
+        ('foo', '0', 'nan'),
+        ('12', '12', '12.00'),
+        ])
+    def test_format(self, fallback, asint, asfloat):
+        missing = self.make_one('key', fallback)
+        assert '%r' % missing == "<Missing: 'key'>"
+        assert '%s' % missing == fallback
+        assert '%d' % missing == asint
+        assert '%.2f' % missing == asfloat
+
+class TestDottedLookup(object):
+    def make_one(self, dict_):
+        from pyramid_log import _DottedLookup
+        return _DottedLookup(dict_)
 
     def test_chained_getitem(self):
         d = self.make_one({'a': MockObject(b='x')})
