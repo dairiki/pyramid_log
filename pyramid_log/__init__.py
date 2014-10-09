@@ -128,19 +128,12 @@ class Missing(object):
         self.key = key
         self.fallback = fallback
 
-    def __repr__(self):
-        key = self.key
-        try:
-            # Do this to avoid the anoying u in the Missing(u'foo')
-            key = native_(key, 'ascii')
-        except UnicodeEncodeError:
-            pass
-        return '<%s: %r>' % (self.__class__.__name__, key)
-
     def __str__(self):
         fallback = self.fallback
         if fallback is None:
-            fallback = '?%s?' % self.key
+            # NB: this differs from __repr__ in that we are allowed to return
+            # unicode in python 2
+            return '<?%s?>' % self.key
         return fallback
 
     if not PY3:                         # pragma: no branch
@@ -148,7 +141,13 @@ class Missing(object):
 
         def __str__(self):
             encoding = sys.getdefaultencoding()
-            return self.__unicode__().encode(encoding, 'replace')
+            return self.__unicode__().encode(encoding, 'backslashreplace')
+
+    def __repr__(self):
+        fallback = self.fallback
+        if fallback is None:
+            return '<?%s?>' % native_(self.key, 'ascii', 'backslashreplace')
+        return repr(fallback)
 
     _int_fallback = 0
 

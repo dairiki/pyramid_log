@@ -135,22 +135,28 @@ class TestWrapDict(object):
         del proxy.x
         assert obj.__dict__ == {}
 
+EURO_SIGN = text_('\N{EURO SIGN}', 'unicode-escape')
+
 class TestMissing(object):
     def make_one(self, key, fallback=None):
         from pyramid_log import Missing
         return Missing(key, fallback)
 
-    def test_repr(self):
-        missing = self.make_one("foo")
-        assert repr(missing) == "<Missing: 'foo'>"
+    @pytest.mark.parametrize('fallback, expected', [
+        (None, "<?attr.name?>"),
+        ('foo', "'foo'"),
+        (EURO_SIGN, repr(EURO_SIGN)),
+        ])
+    def test_repr(self, fallback, expected):
+        missing = self.make_one("attr.name", fallback)
+        assert repr(missing) == expected
 
     def test_repr_unicode_key(self):
         # carefully constructed to work in python 3.2
-        euro_sign = text_('\N{EURO SIGN}', 'unicode-escape')
-        missing = self.make_one(euro_sign)
+        missing = self.make_one(EURO_SIGN)
         assert repr(missing) in (
-            r"<Missing: u'\u20ac'>",      # py2
-            "<Missing: '%s'>" % euro_sign, # py3k
+            r"<?\u20ac?>",              # py2
+            "<?%s?>" % EURO_SIGN,       # py3k
             )
 
     def test_str(self):
@@ -188,19 +194,33 @@ class TestMissing(object):
         ])
     def test_format(self, fallback, asint, asfloat):
         missing = self.make_one('key', fallback)
-        assert '%r' % missing == "<Missing: 'key'>"
         assert '%s' % missing == fallback
+        assert '%r' % missing == repr(fallback)
         assert '%d' % missing == asint
         assert '%.2f' % missing == asfloat
+
+    def test_format_unicode(self):
+        missing = self.make_one('key', EURO_SIGN)
+        # missing.__str__()
+        assert '%s' % missing in (
+            r'\u20ac',                  # py2
+            EURO_SIGN,                  # py3k
+            )
+        # This tests missing.__unicode__() under python 2
+        assert text_('%s') % missing == EURO_SIGN
 
 class TestDottedLookup(object):
     def make_one(self, dict_):
         from pyramid_log import _DottedLookup
         return _DottedLookup(dict_)
 
-    def test_chained_getitem(self):
-        d = self.make_one({'a': MockObject(b='x')})
-        assert d['a.b'] == 'x'
+    def test_dotted_attribute_lookup(self):
+        d = self.make_one({'a': MockObject(b=MockObject(c='d'))})
+        assert d['a.b.c'] == 'd'
+
+    def test_getitem_lookup(self):
+        d = self.make_one({'a': {'b': 'c'}})
+        assert d['a.b'] == 'c'
 
     def test_fallback(self):
         d = self.make_one({'a': MockObject(b='x')})
@@ -210,5 +230,5 @@ class TestDottedLookup(object):
 
     def test_default_fallback(self):
         d = self.make_one({'a': MockObject(b='x')})
-        assert str(d['missing-key']) == '?missing-key?'
-        assert str(d['a.missing-key']) == '?a.missing-key?'
+        assert str(d['missing-key']) == '<?missing-key?>'
+        assert str(d['a.missing-key']) == '<?a.missing-key?>'
