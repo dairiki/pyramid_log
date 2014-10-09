@@ -19,7 +19,7 @@ def current_request(request):
 
 @pytest.fixture
 def log_record():
-    return logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
+    return logging.LogRecord('test', logging.INFO, __file__, 0, 'msg', (), None)
 
 class MockObject(object):
     def __init__(self, **kw):
@@ -30,14 +30,38 @@ class TestFormatter(object):
         from pyramid_log import Formatter
         return Formatter(*args, **kwargs)
 
+    def test_init_raises_value_error(self):
+        with pytest.raises(ValueError):
+            self.make_one(style='$')
+
+    def test_default_format(self, log_record):
+        log_record.msg = 'the message'
+        formatter = self.make_one()
+        assert formatter.format(log_record) == 'the message'
+
     def test_with_explicit_request(self, log_record):
         log_record.request = Request.blank('/', POST={})
-        formatter = self.make_one('%(request.method)s')
+        formatter = self.make_one('${request.method}')
         assert formatter.format(log_record) == 'POST'
 
     def test_with_threadlocal_request(self, current_request, log_record):
-        formatter = self.make_one('%(request.method)s')
+        formatter = self.make_one('${request.method}')
         assert formatter.format(log_record) == 'GET'
+
+    def test_format_time(self, log_record):
+        formatter = self.make_one(fmt="${'='.join(['asctime', asctime])}",
+                                  datefmt='DATEFMT')
+        assert formatter.format(log_record) == 'asctime=DATEFMT'
+
+    @pytest.mark.parametrize('expr,expected', [
+        ('False', 'False'),
+        ('True', 'True'),
+        ('None', ''),
+        ('[1,1+1]', '[1, 2]'),
+        ])
+    def test_format_expr(self, log_record, expr, expected):
+        formatter = self.make_one('${%s}' % expr)
+        assert formatter.format(log_record) == expected
 
     def test_format_called_with_log_disabled(self, log_record):
         manager = logging.root.manager
@@ -46,7 +70,7 @@ class TestFormatter(object):
             def disable(self):
                 return manager.disable
         log_record.request = MockRequest()
-        formatter = self.make_one('%(request.disable)s')
+        formatter = self.make_one('${request.disable}')
         assert formatter.format(log_record) == '%d' % log_record.levelno
         # Check that manager.disable is restored
         assert not manager.disable
@@ -78,53 +102,3 @@ class TestReplaceDict(object):
         d = {}
         proxy = self.make_one(obj, d)
         assert proxy.__dict__ is d
-
-class TestChainingDict(object):
-    def make_one(self, *args, **kwargs):
-        from pyramid_log import _ChainingDict
-        return _ChainingDict(*args, **kwargs)
-
-    def test_chained_getitem(self):
-        d = self.make_one({'a': {'b': 'x'}})
-        assert d['a.b'] == 'x'
-
-    def test_key_error(self):
-        d = self.make_one()
-        with pytest.raises(KeyError):
-            d['missing']
-        with pytest.raises(KeyError):
-            d['missing.b']
-
-class TestGetitemProxy(object):
-    def make_one(self, wrapped):
-        from pyramid_log import _GetitemProxy
-        return _GetitemProxy(wrapped)
-
-    def test_proxy(self):
-        proxy = self.make_one(MockObject(x=1))
-        assert proxy.x == 1
-        assert isinstance(proxy, MockObject)
-
-    def test_getitem(self):
-        proxy = self.make_one(MockObject(x=42))
-        assert proxy['x'] == 42
-        assert proxy['missing'] is None
-
-    def test_chained_attribute_access(self):
-        proxy = self.make_one(MockObject(x=MockObject(y=42)))
-        assert proxy['x.y'] == 42
-        assert proxy['missing.y'] is None
-        assert proxy['x.missing'] is None
-
-    def test_proxy_none(self):
-        proxy = self.make_one(None)
-        assert proxy['foo'] is None
-        assert isinstance(proxy, type(None))
-
-    def test_getitem_returns_none_on_exception(self):
-        class Obj(object):
-            @property
-            def err(self):
-                raise RuntimeError()
-        proxy = self.make_one(Obj())
-        assert proxy['err'] is None

@@ -4,7 +4,7 @@
 Request Attributes in Log Messages
 ##################################
 
-|version| |py_versions| |py_implementation| |license| |build status|
+|py_versions| |py_implementation| |license| |build status|
 
 The `pyramid_log`_ distribution includes a Python `logging
 formatter`_ which makes Pyramid_ request attributes available for use
@@ -22,6 +22,8 @@ into log messages include:
 There are many more. See the `pyramid.request`_ documentation for more
 details on what request attributes might be available.
 
+Additionally, ``pyramid_log.Formatter`` uses Chameleon_ `string expressions`_
+(instead of printf-style format strings) to specify the log format.
 
 ************
 Installation
@@ -42,7 +44,7 @@ To log the request method and path with all log messages::
     from pyramid_log import Formatter
 
     fmt = Formatter(
-        '%(asctime)s %(request.method)s %(request.path_qs)s: %(message)s')
+        "${asctime} ${request.method|'-'} ${request.path_qs|'-'}: ${message}')
 
     logging.basicConfig()
     for handler in logging.getLogger().handlers:
@@ -62,7 +64,7 @@ the format string (using “dotted” keys starting with the prefix
 ``'request.'``.  (Admittedly, for logging purposes, some request
 attributes are more useful than others.)  Adding extra dots to the key
 will get you attributes of request attributes.  For example the
-matched route name is available as ``%(request.matched_route.name)s``.
+matched route name is available as ``${request.matched_route.name}``.
 
 See the `pyramid.request`_ documentation for more details on what request
 attributes might be available.
@@ -94,8 +96,8 @@ do something like::
 
     [formatter_pyramid]
     class = pyramid_log.Formatter
-    format = %(asctime)s %(request.method)s %(request.path_qs)s
-             %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s
+    format = ${asctime} ${request.method|'-'} ${request.path_qs|'-'}
+             ${'%-5.5s' % levelname} [${name}][${threadName}] ${message}
 
 Refer to Pyramid’s `chapter on logging`_ and the documentation for the
 Python logging_ module’s `configuration file format`_ for more details
@@ -127,6 +129,10 @@ Jeff Dairiki <dairiki@dairiki.org>
    https://pypi.python.org/pypi/pyramid_log/
 .. _pyramid_log: pypi_
 
+.. _Chameleon: https://pypi.python.org/pypi/Chameleon
+.. _string expressions:
+   http://chameleon.readthedocs.org/en/latest/reference.html#string
+
 .. _pip:
    https://pip.pypa.io/en/latest/
 
@@ -153,7 +159,7 @@ Jeff Dairiki <dairiki@dairiki.org>
    ======================================================================
 
 .. |build status| image::
-    https://travis-ci.org/dairiki/pyramid_log.svg?branch=master
+    https://travis-ci.org/dairiki/pyramid_log.svg?branch=chameleon-format-string
     :target: https://travis-ci.org/dairiki/pyramid_log
 
 .. |downloads| image::

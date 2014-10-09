@@ -8,13 +8,24 @@ for use in log messages.
 """
 from __future__ import absolute_import
 
+import _ast
+import ast
 import logging
+
+from chameleon import PageTextTemplate
+from pyramid.compat import text_type
 from pyramid.threadlocal import get_current_request
-from zope.proxy import ProxyBase
+
+_marker = object()
 
 class Formatter(logging.Formatter):
     ''' A logging formatter which makes attributes of the pyramid
     request available for use in its format string.
+
+    Note that this uses a Chameleon_ text format string rather than
+    the printf-style format string used by :cls:`logging.Formatter`.
+
+    .. _Chameleon: http://chameleon.readthedocs.org/en/latest/
 
     Example usage::
 
@@ -24,10 +35,10 @@ class Formatter(logging.Formatter):
 
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(pyramid_log.Formatter(
-            "%(asctime)s %(request.unauthenticated_userid)s "
-            "[%(request.client_addr)s]\\n"
-            "  %(request.method)s %(request.path_qs)\\n"
-            "  %(levelname)s %(message)s"))
+            "${asctime} ${request.unauthenticated_userid|'-'} "
+            "[${request.client_addr|'-'}]\\n"
+            "  ${request.method|''} ${request.path_qs|''}\\n"
+            "  ${levelname} ${message}"))
         root = logging.getLogger()
         root.addHandler(handler)
         root.warning("Say: %s", "howdy")
@@ -51,34 +62,80 @@ class Formatter(logging.Formatter):
     determine the current request.
 
     '''
+    default_format = '${message}'
+
+    def __init__(self, fmt=None, datefmt=None, style=_marker):
+        if style is not _marker:
+            raise ValueError(
+                "Unsupported style. Only chameleon format strings are "
+                "supported by this formatter.")
+        if not fmt:
+            fmt = self.default_format
+        # literal_false=True makes False expand to "False" (by
+        # default, False exapands to the empty string.)
+        template = PageTextTemplate(fmt, keep_source=True, literal_false=True)
+        self.referenced_names = set(_referenced_names(template.source))
+        del template.source
+        logging.Formatter.__init__(self, _FormatString(fmt, template), datefmt)
+
     def format(self, record):
         """ Format the specific record as text.
 
         This version is special in that it makes attributes of the
         pyramid request available for use in the log message.  For
         example, the request method may be interpolated into the log
-        message by including ``'%(request.method)s'`` within the
+        message by including ``'${request.method}'`` within the
         format string.
 
         See :meth:`logging.Formatter.format` for further details.
 
         """
-        if hasattr(record, 'request'):
-            request = record.request
-        else:
-            request = get_current_request()
-
-        d = _ChainingDict(record.__dict__)
-        d['request'] = _GetitemProxy(request)
+        referenced_names = self.referenced_names
+        if 'request' in referenced_names:
+            if not hasattr(record, 'request'):
+                # Temporarily add request to record's dict.  Out of a
+                # surfeit of multi-thread angst, we do this with a
+                # proxy so as to avoid ever modifying the original log
+                # record.
+                request = get_current_request()
+                d = dict(record.__dict__, request=request)
+                record = _ReplaceDict(record, d)
+        if 'asctime' in referenced_names:
+            record.asctime = self.formatTime(record, self.datefmt)
 
         # disable logging during disable to prevent recursion
         # (in case a logged request property generates a log message)
         save_disable = logging.root.manager.disable
         logging.disable(record.levelno)
         try:
-            return logging.Formatter.format(self, _ReplaceDict(record, d))
+            return logging.Formatter.format(self, record)
         finally:
             logging.disable(save_disable)
+
+class _FormatString(text_type):
+    # Use a custom __mod__ to to fake out logging.Formatter into using
+    # our template for formatting
+    def __new__(typ, str, template):
+        return text_type.__new__(typ, str)
+
+    def __init__(self, str, template):
+        self.template = template
+
+    def __mod__(self, d):
+        return self.template.render(**d)
+
+def _referenced_names(template_source):
+    """ Get referenced names from chameleon template source.
+
+    """
+    # Find calls to ``getitem('NAME')``
+    tree = ast.parse(template_source)
+    for node in ast.walk(tree):
+        if isinstance(node, _ast.Call) \
+               and isinstance(node.func, _ast.Name) \
+               and node.func.id == 'getitem':
+            assert list(map(type, node.args)) == [_ast.Str]
+            yield node.args[0].s
 
 class _ReplaceDict(object):
     """ A minimal object proxy which “replaces” the objects ``__dict__``.
@@ -92,54 +149,3 @@ class _ReplaceDict(object):
 
     def __getattr__(self, attr):
         return getattr(self._wrapped, attr)
-
-class _ChainingDict(dict):
-    """ A dict which supports dotted-key chained lookup.
-
-    Example::
-
-        >>> d = ChainingDict({'a': {'b': 'foo'}})
-        >>> d['a.b']                    # same as d['a']['b']
-        'foo'
-
-
-    """
-    def __missing__(self, key):
-        left, dot, right = key.partition('.')
-        if not dot:
-            raise KeyError(key)
-        try:
-            return self[left][right]
-        except KeyError:
-            raise KeyError(key)
-
-class _GetitemProxy(ProxyBase):
-    """ A proxy which adds dict-like read-only access to an object’s
-    attributes.
-
-    Attribute chaining is supported using a dotted-key notation.
-
-    Dictionary access to non-existant attributes returns None.
-
-    Example usage::
-
-        >>> d = GetitemProxy(request)
-
-        >>> d['path']                   # gets request.path
-        u '/foo'
-
-        >>> d['matched_route.name']     # gets request.matched_route.name
-        'foo_route'
-
-        >>> d['unknown_attr']           # Missing attributes => None
-        None
-
-    """
-    def __getitem__(self, key):
-        val = self
-        try:
-            for attr in key.split('.'):
-                val = getattr(val, attr)
-        except:
-            val = None
-        return val

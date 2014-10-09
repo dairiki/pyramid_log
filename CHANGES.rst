@@ -2,10 +2,13 @@
 History
 *******
 
-Next Release
-============
+Chameleon Format String Version
+===============================
 
-No changes.
+This is a development branch which is playing with the idea of using
+Chameleon__ for formatting the log messages.
+
+__ https://pypi.python.org/pypi/Chameleon/
 
 Release 0.1.1 (2014-10-02)
 ==========================
