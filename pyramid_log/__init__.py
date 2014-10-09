@@ -85,14 +85,29 @@ class _ReplaceDict(object):
     """ A minimal object proxy which “replaces” the objects ``__dict__``.
 
     """
-    __slots__ = ['__dict__', '_wrapped']
+    __slots__ = ['dict', 'wrapped']
 
-    def __init__(self, wrapped, d):
-        self._wrapped = wrapped
-        self.__dict__ = d
+    def __init__(self, wrapped, dict_):
+        object.__setattr__(self, 'wrapped', wrapped)
+        object.__setattr__(self, 'dict', dict_)
 
-    def __getattr__(self, attr):
-        return getattr(self._wrapped, attr)
+    def __getattribute__(self, attr):
+        dict_ = object.__getattribute__(self, 'dict')
+        if attr == '__dict__':
+            return dict_
+        elif attr in dict_:
+            return dict_[attr]
+        else:
+            wrapped = object.__getattribute__(self, 'wrapped')
+            return getattr(wrapped, attr)
+
+    def __setattr__(self, attr, value):
+        dict_ = object.__getattribute__(self, 'dict')
+        dict_[attr] = value
+
+    def __delattr__(self, attr):
+        raise NotImplementedError()
+
 
 class Missing(object):
     def __init__(self, strval):

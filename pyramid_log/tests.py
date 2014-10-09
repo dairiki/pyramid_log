@@ -100,9 +100,11 @@ class TestReplaceDict(object):
             def m(self):
                 return 'foo'
         obj = Obj()
-        proxy = self.make_one(obj, {'x': 'bar'})
+        d = {'x': 'bar'}
+        proxy = self.make_one(obj, d)
         assert proxy.m() == 'foo'
         assert proxy.x == 'bar'
+        assert proxy.__dict__ is d
 
     def test_setattr_modifies_proxy(self):
         obj = MockObject(x='orig')
@@ -112,11 +114,10 @@ class TestReplaceDict(object):
         assert d['x'] == 'changed'
         assert obj.x == 'orig'
 
-    def test_init_with_explicit_dict(self):
-        obj = object()
-        d = {}
-        proxy = self.make_one(obj, d)
-        assert proxy.__dict__ is d
+    def test_delattr_not_supported(self):
+        proxy = self.make_one(object(), {'x': 1})
+        with pytest.raises(NotImplementedError):
+            del proxy.x
 
 class TestMissing(object):
     def make_one(self, strval):
