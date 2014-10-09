@@ -25,9 +25,9 @@ class Formatter(logging.Formatter):
 
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(pyramid_log.Formatter(
-            "%(asctime)s %(request.unauthenticated_userid)s "
-            "[%(request.client_addr)s]\\n"
-            "  %(request.method)s %(request.path_qs)\\n"
+            "%(asctime)s %(request.unauthenticated_userid|<anonymous>)s "
+            "[%(request.client_addr|)s]\\n"
+            "  %(request.method|-)s %(request.path_qs|-)\\n"
             "  %(levelname)s %(message)s"))
         root = logging.getLogger()
         root.addHandler(handler)
@@ -55,14 +55,6 @@ class Formatter(logging.Formatter):
     def format(self, record):
         """ Format the specific record as text.
 
-        This version is special in that it makes attributes of the
-        pyramid request available for use in the log message.  For
-        example, the request method may be interpolated into the log
-        message by including ``'%(request.method)s'`` within the
-        format string.
-
-        See :meth:`logging.Formatter.format` for further details.
-
         """
         has_record = hasattr(record, 'request')
         if not has_record:
@@ -70,14 +62,7 @@ class Formatter(logging.Formatter):
             if request is not None:
                 record.request = request
 
-        # Apply magic: this makes it so that
-        #
-        #    magic_record.__dict__['foo.bar|f']
-        #
-        # is rougly equivalent to:
-        #
-        #    getattr(record.__dict__.get('foo'), 'bar', 'f')
-        #
+        # magic_record.__dict__ support dotted attribute lookup
         magic_record = _WrapDict(record, _DottedLookup)
 
         # Disable logging during disable to prevent recursion (in case
