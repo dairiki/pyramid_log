@@ -66,7 +66,9 @@ class Formatter(logging.Formatter):
         """
         has_record = hasattr(record, 'request')
         if not has_record:
-            record.request = get_current_request()
+            request = get_current_request()
+            if request is not None:
+                record.request = request
 
         # Apply magic: this makes it so that
         #
@@ -86,7 +88,7 @@ class Formatter(logging.Formatter):
             return logging.Formatter.format(self, magic_record)
         finally:
             logging.disable(save_disable)
-            if not has_record:
+            if not has_record and hasattr(record, 'request'):
                 del record.request
 
 class _WrapDict(object):

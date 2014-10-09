@@ -56,13 +56,6 @@ class TestIntegration(object):
 def log_record():
     return logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
 
-class MockObject(object):
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-class MockWrapper(object):
-    def __init__(self, d):
-        self.wrapped = d
 
 class TestFormatter(object):
     def make_one(self, *args, **kwargs):
@@ -80,9 +73,18 @@ class TestFormatter(object):
         assert formatter.format(log_record) == 'GET'
         assert not hasattr(log_record, 'request')
 
-    def test_format_asctime(self, current_request, log_record):
+    def test_with_no_request(self, log_record):
+        formatter = self.make_one('%(request|no request)s')
+        assert formatter.format(log_record) == 'no request'
+        assert not hasattr(log_record, 'request')
+
+    def test_format_asctime(self, log_record):
         formatter = self.make_one('asctime=%(asctime)s', datefmt="DATEFMT")
         assert formatter.format(log_record) == 'asctime=DATEFMT'
+
+    def test_format_parentheses_in_fallback(self, log_record):
+        formatter = self.make_one('%(request.method|(no request))s')
+        assert formatter.format(log_record) == '(no request)'
 
     def test_format_called_with_log_disabled(self, log_record):
         manager = logging.root.manager
@@ -95,6 +97,14 @@ class TestFormatter(object):
         assert formatter.format(log_record) == '%d' % log_record.levelno
         # Check that manager.disable is restored
         assert not manager.disable
+
+class MockObject(object):
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+class MockWrapper(object):
+    def __init__(self, d):
+        self.wrapped = d
 
 class TestWrapDict(object):
     def make_one(self, obj, dictwrapper):
