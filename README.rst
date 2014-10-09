@@ -9,7 +9,7 @@ Request Attributes in Log Messages
 What It Does
 ============
 
-The `Pyramid_log`_ distribution includes a Python `logging formatter`_
+The `pyramid_log`_ distribution includes a Python `logging formatter`_
 which makes Pyramid_ request attributes available for use in its
 format string.  Specifically, ``pyramid_log.Formatter`` is special in
 the following ways:
