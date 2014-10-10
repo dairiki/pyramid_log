@@ -30,7 +30,7 @@ The pyramid request has many attributes which can be useful when included
 in the logs of a web app.  These include, but are not limited to:
 
 - ``request.method``
-- ``request.url`` (or ``request.path``, ``request.path_qs``, etc…
+- ``request.url`` (or ``request.path``, ``request.path_qs``, etc…)
 - ``request.unauthenticated_userid``
 - ``request.client_addr``
 - ``request.GET`` (or ``request.POST`` or ``request.params``)
