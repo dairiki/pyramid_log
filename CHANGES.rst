@@ -12,7 +12,7 @@ Better fallback values.
 
 - Now, by default, if an attribute is missing (which can happen, e.g.,
   for ``%(request.method)s`` is there is no current request) it is
-  rendered as ``<?``*attribute-name*``?>``
+  rendered as ``<?``\ *attribute-name*\ ``?>``
   (e.g. ``"<?request.method?>"``.)
 
 - There is now a syntax for explicitly specifying fallback values.  E.g.
