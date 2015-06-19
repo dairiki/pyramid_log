@@ -200,26 +200,26 @@ Jeff Dairiki <dairiki@dairiki.org>
     :target: https://travis-ci.org/dairiki/pyramid_log
 
 .. |downloads| image::
-    https://pypip.in/download/pyramid_log/badge.svg
+    https://img.shields.io/pypi/dm/pyramid_log.svg
     :target: https://pypi.python.org/pypi/pyramid_log/
     :alt: Downloads
 .. |version| image::
-    https://pypip.in/version/pyramid_log/badge.svg?text=version
+    https://img.shields.io/pypi/v/pyramid_log.svg
     :target: https://pypi.python.org/pypi/pyramid_log/
     :alt: Latest Version
 .. |py_versions| image::
-    https://pypip.in/py_versions/pyramid_log/badge.svg
+    https://img.shields.io/pypi/pyversions/pyramid_log.svg
     :target: https://pypi.python.org/pypi/pyramid_log/
     :alt: Supported Python versions
 .. |py_implementation| image::
-    https://pypip.in/implementation/pyramid_log/badge.svg
+    https://img.shields.io/pypi/implementation/pyramid_log.svg
     :target: https://pypi.python.org/pypi/pyramid_log/
     :alt: Supported Python versions
 .. |license| image::
-    https://pypip.in/license/pyramid_log/badge.svg
+    https://img.shields.io/pypi/l/pyramid_log.svg
     :target: https://github.com/dairiki/pyramid_log/blob/master/LICENSE
     :alt: License
 .. |dev_status| image::
-    https://pypip.in/status/pyramid_log/badge.svg
+    https://img.shields.io/pypi/status/pyramid_log.svg
     :target: https://pypi.python.org/pypi/pyramid_log/
     :alt: Development Status
