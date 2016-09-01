@@ -13,6 +13,15 @@ import sys
 from pyramid.compat import PY3, native_, text_type
 from pyramid.threadlocal import get_current_request
 
+try:
+    from pyramid.security import authenticated_userid
+except ImportError:
+    # deprecated function, will be removed in later versions so provide b/w
+    # compat function even though it won't be called
+    def authenticated_userid(req):
+        return None
+
+
 class Formatter(logging.Formatter):
     ''' A logging formatter which makes attributes of the pyramid
     request available for use in its format string.
@@ -62,6 +71,12 @@ class Formatter(logging.Formatter):
             if request is not None:
                 record.request = request
 
+        if hasattr(record, 'request'):
+            if hasattr(record.request, 'authenticated_userid'):
+                record.userid = record.request.authenticated_userid
+            else:
+                record.userid = authenticated_userid(record.request)
+
         # magic_record.__dict__ support dotted attribute lookup
         magic_record = _WrapDict(record, _DottedLookup)
 
@@ -75,6 +90,7 @@ class Formatter(logging.Formatter):
             logging.disable(save_disable)
             if not has_record and hasattr(record, 'request'):
                 del record.request
+
 
 class _WrapDict(object):
     """ An object proxy which provides a “wrapped” of the proxied
@@ -159,6 +175,7 @@ class Missing(object):
             return self._float_fallback
 
 _marker = object()
+
 
 class _DottedLookup(object):
     """ A dict which supports dotted-key chained lookup, with fallback
