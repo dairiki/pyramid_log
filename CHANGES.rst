@@ -1,6 +1,12 @@
 History
 =======
 
+Release 0.3 (unreleased)
+------------------------
+
+- Make b/w compat with older versions of pyramid to be able to get userid
+  [vangheem]
+
 Release 0.2 (2014-10-09)
 ------------------------
 
