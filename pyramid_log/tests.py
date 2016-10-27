@@ -12,12 +12,14 @@ from pyramid.request import Request
 from pyramid import testing
 import pytest
 
+
 @pytest.fixture
 def current_request(request):
     r = Request.blank('/')
-    config = testing.setUp(request=r)
+    testing.setUp(request=r)
     request.addfinalizer(testing.tearDown)
     return r
+
 
 class TestIntegration(object):
     """ Integration tests.
@@ -51,6 +53,7 @@ class TestIntegration(object):
         logger = logging.getLogger()
         logger.warn("is this thing on?")
         assert logstream.getvalue() == "<DATE> - - : is this thing on?\n"
+
 
 @pytest.fixture
 def log_record():
@@ -88,6 +91,7 @@ class TestFormatter(object):
 
     def test_format_called_with_log_disabled(self, log_record):
         manager = logging.root.manager
+
         class MockRequest(object):
             @property
             def disable(self):
@@ -98,13 +102,16 @@ class TestFormatter(object):
         # Check that manager.disable is restored
         assert not manager.disable
 
+
 class MockObject(object):
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
+
 class MockWrapper(object):
     def __init__(self, d):
         self.wrapped = d
+
 
 class TestWrapDict(object):
     def make_one(self, obj, dictwrapper):
@@ -114,7 +121,6 @@ class TestWrapDict(object):
     def test_dict(self):
         obj = MockObject()
         proxy = self.make_one(obj, MockWrapper)
-        dict_ = proxy.__dict__
         assert type(proxy.__dict__) is MockWrapper
         assert proxy.__dict__.wrapped is obj.__dict__
 
@@ -146,6 +152,7 @@ class TestWrapDict(object):
         assert obj.__dict__ == {}
 
 EURO_SIGN = text_('\N{EURO SIGN}', 'unicode-escape')
+
 
 class TestMissing(object):
     def make_one(self, key, fallback=None):
@@ -218,6 +225,7 @@ class TestMissing(object):
             )
         # This tests missing.__unicode__() under python 2
         assert text_('%s') % missing == EURO_SIGN
+
 
 class TestDottedLookup(object):
     def make_one(self, dict_):

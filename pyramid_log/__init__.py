@@ -10,8 +10,9 @@ from __future__ import absolute_import
 
 import logging
 import sys
-from pyramid.compat import PY3, native_, text_type
+from pyramid.compat import PY3, native_
 from pyramid.threadlocal import get_current_request
+
 
 class Formatter(logging.Formatter):
     ''' A logging formatter which makes attributes of the pyramid
@@ -75,6 +76,7 @@ class Formatter(logging.Formatter):
             logging.disable(save_disable)
             if not has_record and hasattr(record, 'request'):
                 del record.request
+
 
 class _WrapDict(object):
     """ An object proxy which provides a “wrapped” of the proxied
@@ -159,6 +161,7 @@ class Missing(object):
             return self._float_fallback
 
 _marker = object()
+
 
 class _DottedLookup(object):
     """ A dict which supports dotted-key chained lookup, with fallback
