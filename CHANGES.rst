@@ -1,6 +1,11 @@
 History
 =======
 
+Next Release
+------------
+
+This release officially drops support for python 3.2 and adds support for python 3.5.
+
 Release 0.2 (2014-10-09)
 ------------------------
 
