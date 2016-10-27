@@ -79,7 +79,7 @@ class Formatter(logging.Formatter):
 
 
 class _WrapDict(object):
-    """ An object proxy which provides a “wrapped” of the proxied
+    """ An object proxy which provides a “wrapped” version of the proxied
     object’s ``__dict__``.
 
     """
@@ -169,7 +169,7 @@ class _DottedLookup(object):
 
     Example::
 
-        >>> d = _MagicDict({'a': {'b': 'foo'}})
+        >>> d = _DottedLookup({'a': {'b': 'foo'}})
         >>> d['a.b']                    # same as d['a']['b']
         'foo'
 
@@ -177,7 +177,7 @@ class _DottedLookup(object):
 
         >>> d['a.b|fb']                 # same as d['a']['b']
         'foo'
-        >>> d['a.z|fb']                 # there is non d['a']['z']
+        >>> d['a.z|fb']                 # there is no d['a']['z']
         'fb'
 
     """
