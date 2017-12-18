@@ -10,7 +10,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
-version = "0.2.1"
+version = "0.2.1.post1.dev0"
 
 install_requires = [
     'pyramid',
