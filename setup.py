@@ -2,9 +2,9 @@
 #
 # Copyright © 2014 Geoffrey T. Dairiki <dairiki@dairiki.org>
 #
-import sys, os
+import os
+import sys
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
@@ -20,24 +20,8 @@ tests_require = [
     'pytest',
     ]
 
-
-class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = ['pyramid_log/tests.py']
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
+needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
+pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 setup(
     name='pyramid_log',
@@ -69,7 +53,7 @@ setup(
     packages=find_packages(),
     # include_package_data=True,
     zip_safe=True,
+    setup_requires=pytest_runner,
     install_requires=install_requires,
     tests_require=tests_require,
-    cmdclass={'test': PyTest},
     )
