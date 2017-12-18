@@ -1,2 +1,3 @@
 include README.rst CHANGES.rst LICENSE
 include tox.ini
+include .coveragerc
