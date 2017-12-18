@@ -151,6 +151,7 @@ class TestWrapDict(object):
         del proxy.x
         assert obj.__dict__ == {}
 
+
 EURO_SIGN = text_('\N{EURO SIGN}', 'unicode-escape')
 
 

@@ -160,6 +160,7 @@ class Missing(object):
         except ValueError:
             return self._float_fallback
 
+
 _marker = object()
 
 
