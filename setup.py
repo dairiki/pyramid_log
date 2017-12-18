@@ -23,6 +23,7 @@ tests_require = [
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
 
+
 setup(
     name='pyramid_log',
     version=version,
@@ -37,11 +38,10 @@ setup(
         "Framework :: Pyramid",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: System :: Logging",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         ],
