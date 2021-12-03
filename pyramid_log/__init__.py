@@ -9,9 +9,15 @@ for use in log messages.
 from __future__ import absolute_import
 
 import logging
-import sys
-from pyramid.compat import PY3, native_
 from pyramid.threadlocal import get_current_request
+
+
+def native_(s, encoding='latin-1', errors='strict'):
+    """ If ``s`` is an instance of ``str``, return
+    ``s``, otherwise return ``str(s, encoding, errors)``"""
+    if isinstance(s, str):
+        return s
+    return str(s, encoding, errors)
 
 
 class Formatter(logging.Formatter):
@@ -53,6 +59,10 @@ class Formatter(logging.Formatter):
     determine the current request.
 
     '''
+    def __init__(self, *args, **kwargs):
+        kwargs['validate'] = False  # '.' not allowed in format strings by default
+        super().__init__(*args, **kwargs)
+
     def format(self, record):
         """ Format the specific record as text.
 
@@ -124,13 +134,6 @@ class Missing(object):
             # unicode in python 2
             return '<?%s?>' % self.key
         return fallback
-
-    if not PY3:                         # pragma: no branch
-        __unicode__ = __str__
-
-        def __str__(self):
-            encoding = sys.getdefaultencoding()
-            return self.__unicode__().encode(encoding, 'backslashreplace')
 
     def __repr__(self):
         fallback = self.fallback

@@ -6,11 +6,19 @@ from __future__ import absolute_import
 
 import logging
 import math
+from io import StringIO as NativeIO
 
-from pyramid.compat import NativeIO, text_
 from pyramid.request import Request
 from pyramid import testing
 import pytest
+
+
+def text_(s, encoding='latin-1', errors='strict'):
+    """ If ``s`` is an instance of ``bytes``, return
+    ``s.decode(encoding, errors)``, otherwise return ``s``"""
+    if isinstance(s, bytes):
+        return s.decode(encoding, errors)
+    return s
 
 
 @pytest.fixture
@@ -46,12 +54,12 @@ class TestIntegration(object):
         current_request.GET['foo'] = 'bar'
         current_request.path_info = '/path'
         logger = logging.getLogger()
-        logger.warn("testing")
+        logger.warning("testing")
         assert logstream.getvalue() == "<DATE> GET /path?foo=bar : testing\n"
 
     def test_without_request(self, logstream):
         logger = logging.getLogger()
-        logger.warn("is this thing on?")
+        logger.warning("is this thing on?")
         assert logstream.getvalue() == "<DATE> - - : is this thing on?\n"
 
 
