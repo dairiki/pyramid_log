@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright © 2014 Geoffrey T. Dairiki <dairiki@dairiki.org>
 #
@@ -6,7 +5,6 @@
 for use in log messages.
 
 """
-from __future__ import absolute_import
 
 import logging
 from pyramid.threadlocal import get_current_request
@@ -89,7 +87,7 @@ class Formatter(logging.Formatter):
                 del record.request
 
 
-class _WrapDict(object):
+class _WrapDict:
     """ An object proxy which provides a “wrapped” version of the proxied
     object’s ``__dict__``.
 
@@ -117,7 +115,7 @@ class _WrapDict(object):
         return delattr(self._obj, attr)
 
 
-class Missing(object):
+class Missing:
     """ Returned for missing keys.
 
     This has decent values upon conversion to various types, making
@@ -166,7 +164,7 @@ class Missing(object):
 _marker = object()
 
 
-class _DottedLookup(object):
+class _DottedLookup:
     """ A dict which supports dotted-key chained lookup, with fallback
     if the lookup fails.
 

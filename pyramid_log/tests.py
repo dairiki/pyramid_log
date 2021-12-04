@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright © 2014 Geoffrey T. Dairiki <dairiki@dairiki.org>
 #
-from __future__ import absolute_import
 
 import io
 import logging
@@ -21,7 +19,7 @@ def current_request(request):
     return r
 
 
-class TestIntegration(object):
+class TestIntegration:
     """ Integration tests.
 
     """
@@ -60,7 +58,7 @@ def log_record():
     return logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
 
 
-class TestFormatter(object):
+class TestFormatter:
     def make_one(self, *args, **kwargs):
         from pyramid_log import Formatter
         return Formatter(*args, **kwargs)
@@ -92,7 +90,7 @@ class TestFormatter(object):
     def test_format_called_with_log_disabled(self, log_record):
         manager = logging.root.manager
 
-        class MockRequest(object):
+        class MockRequest:
             @property
             def disable(self):
                 return manager.disable
@@ -103,17 +101,17 @@ class TestFormatter(object):
         assert not manager.disable
 
 
-class MockObject(object):
+class MockObject:
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
 
-class MockWrapper(object):
+class MockWrapper:
     def __init__(self, d):
         self.wrapped = d
 
 
-class TestWrapDict(object):
+class TestWrapDict:
     def make_one(self, obj, dictwrapper):
         from pyramid_log import _WrapDict
         return _WrapDict(obj, dictwrapper)
@@ -125,7 +123,7 @@ class TestWrapDict(object):
         assert proxy.__dict__.wrapped is obj.__dict__
 
     def test_getattr(self):
-        class Obj(object):
+        class Obj:
             def m(self):
                 return 'foo'
             x = 'bar'
@@ -155,7 +153,7 @@ class TestWrapDict(object):
 EURO_SIGN = '\N{EURO SIGN}'
 
 
-class TestMissing(object):
+class TestMissing:
     def make_one(self, key, fallback=None):
         from pyramid_log import Missing
         return Missing(key, fallback)
@@ -219,7 +217,7 @@ class TestMissing(object):
         assert '%s' % missing == EURO_SIGN
 
 
-class TestDottedLookup(object):
+class TestDottedLookup:
     def make_one(self, dict_):
         from pyramid_log import _DottedLookup
         return _DottedLookup(dict_)
