@@ -12,14 +12,6 @@ import logging
 from pyramid.threadlocal import get_current_request
 
 
-def native_(s, encoding='latin-1', errors='strict'):
-    """ If ``s`` is an instance of ``str``, return
-    ``s``, otherwise return ``str(s, encoding, errors)``"""
-    if isinstance(s, str):
-        return s
-    return str(s, encoding, errors)
-
-
 class Formatter(logging.Formatter):
     ''' A logging formatter which makes attributes of the pyramid
     request available for use in its format string.
@@ -139,15 +131,13 @@ class Missing(object):
     def __str__(self):
         fallback = self.fallback
         if fallback is None:
-            # NB: this differs from __repr__ in that we are allowed to return
-            # unicode in python 2
-            return '<?%s?>' % self.key
+            return f'<?{self.key}?>'
         return fallback
 
     def __repr__(self):
         fallback = self.fallback
         if fallback is None:
-            return '<?%s?>' % native_(self.key, 'ascii', 'backslashreplace')
+            return f'<?{self.key}?>'
         return repr(fallback)
 
     _int_fallback = 0

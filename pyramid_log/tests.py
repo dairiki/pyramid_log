@@ -4,21 +4,13 @@
 #
 from __future__ import absolute_import
 
+import io
 import logging
 import math
-from io import StringIO as NativeIO
 
 from pyramid.request import Request
 from pyramid import testing
 import pytest
-
-
-def text_(s, encoding='latin-1', errors='strict'):
-    """ If ``s`` is an instance of ``bytes``, return
-    ``s.decode(encoding, errors)``, otherwise return ``s``"""
-    if isinstance(s, bytes):
-        return s.decode(encoding, errors)
-    return s
 
 
 @pytest.fixture
@@ -38,7 +30,7 @@ class TestIntegration(object):
         """ Patch the root logger to log to an in-memory stream.
         """
         import pyramid_log
-        logstream = NativeIO()
+        logstream = io.StringIO()
         root = logging.getLogger()
         monkeypatch.setattr(root, 'handlers', [])
         handler = logging.StreamHandler(logstream)
@@ -160,7 +152,7 @@ class TestWrapDict(object):
         assert obj.__dict__ == {}
 
 
-EURO_SIGN = text_('\N{EURO SIGN}', 'unicode-escape')
+EURO_SIGN = '\N{EURO SIGN}'
 
 
 class TestMissing(object):
@@ -180,10 +172,7 @@ class TestMissing(object):
     def test_repr_unicode_key(self):
         # carefully constructed to work in python 3.2
         missing = self.make_one(EURO_SIGN)
-        assert repr(missing) in (
-            r"<?\u20ac?>",              # py2
-            "<?%s?>" % EURO_SIGN,       # py3k
-            )
+        assert repr(missing) == f"<?{EURO_SIGN}?>"
 
     def test_str(self):
         missing = self.make_one('key', "foo")
@@ -227,13 +216,7 @@ class TestMissing(object):
 
     def test_format_unicode(self):
         missing = self.make_one('key', EURO_SIGN)
-        # missing.__str__()
-        assert '%s' % missing in (
-            r'\u20ac',                  # py2
-            EURO_SIGN,                  # py3k
-            )
-        # This tests missing.__unicode__() under python 2
-        assert text_('%s') % missing == EURO_SIGN
+        assert '%s' % missing == EURO_SIGN
 
 
 class TestDottedLookup(object):
