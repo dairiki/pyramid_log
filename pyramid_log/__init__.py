@@ -59,9 +59,18 @@ class Formatter(logging.Formatter):
     determine the current request.
 
     '''
-    def __init__(self, *args, **kwargs):
-        kwargs['validate'] = False  # '.' not allowed in format strings by default
-        super().__init__(*args, **kwargs)
+    try:
+        logging.Formatter(validate=False)
+        _validate_supported = True
+    except TypeError:           # pragma: no cover
+        _validate_supported = False
+
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=False,
+                 **kwargs):
+        # python >= 3.8 does not, by default, allow '.' in '%' format strings
+        if self._validate_supported:  # pragma: no branch
+            kwargs['validate'] = validate
+        super().__init__(fmt, datefmt, style, **kwargs)
 
     def format(self, record):
         """ Format the specific record as text.
