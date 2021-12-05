@@ -1,7 +1,7 @@
 History
 =======
 
-Release 1.0 (unreleased)
+Release 1.0 (2021-12-05)
 ------------------------
 
 This release adds support for python>=3.8 and pyramid>=2.
