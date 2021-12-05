@@ -3,3 +3,10 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm>=5"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+python_files = "test*.py"
+norecursedirs = ".tox build"
+
+[tool.coverage.run]
+branch = true
