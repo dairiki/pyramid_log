@@ -10,8 +10,9 @@ from __future__ import absolute_import
 
 import logging
 import sys
-from pyramid.compat import PY3, native_
 from pyramid.threadlocal import get_current_request
+
+from ._compat import PY2, native_
 
 
 class Formatter(logging.Formatter):
@@ -53,6 +54,26 @@ class Formatter(logging.Formatter):
     determine the current request.
 
     '''
+    try:
+        logging.Formatter(validate=False)
+        _validate_supported = True
+    except TypeError:           # pragma: no cover
+        _validate_supported = False
+
+    try:
+        logging.Formatter(style='%')
+        _style_supported = True
+    except TypeError:           # pragma: no cover
+        _style_supported = False  # python 2.7
+
+    def __init__(self, fmt=None, datefmt=None, style='%', **kwargs):
+        # python >= 3.8 does not, by default, allow '.' in '%' format strings
+        if self._style_supported:  # pragma: no branch
+            kwargs['style'] = '%'
+        if self._validate_supported:  # pragma: no branch
+            kwargs['validate'] = False
+        super(Formatter, self).__init__(fmt, datefmt, **kwargs)
+
     def format(self, record):
         """ Format the specific record as text.
 
@@ -125,7 +146,7 @@ class Missing(object):
             return '<?%s?>' % self.key
         return fallback
 
-    if not PY3:                         # pragma: no branch
+    if PY2:                         # pragma: no cover
         __unicode__ = __str__
 
         def __str__(self):

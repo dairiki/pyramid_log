@@ -7,10 +7,11 @@ from __future__ import absolute_import
 import logging
 import math
 
-from pyramid.compat import NativeIO, text_
 from pyramid.request import Request
 from pyramid import testing
 import pytest
+
+from ._compat import NativeIO, text_
 
 
 @pytest.fixture
@@ -46,12 +47,12 @@ class TestIntegration(object):
         current_request.GET['foo'] = 'bar'
         current_request.path_info = '/path'
         logger = logging.getLogger()
-        logger.warn("testing")
+        logger.warning("testing")
         assert logstream.getvalue() == "<DATE> GET /path?foo=bar : testing\n"
 
     def test_without_request(self, logstream):
         logger = logging.getLogger()
-        logger.warn("is this thing on?")
+        logger.warning("is this thing on?")
         assert logstream.getvalue() == "<DATE> - - : is this thing on?\n"
 
 

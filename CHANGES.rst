@@ -1,12 +1,34 @@
 History
 =======
 
+Release 1.0 (unreleased)
+------------------------
+
+This release adds support for python>=3.8 and pyramid>=2.
+
+The 1.x releases will be the last to support running under python 2.7.
+
+Compatibility
+^^^^^^^^^^^^^
+
+- Python >= 3.8: ``logger.Formatter`` requires the ``validate=False``
+  argument, otherwise it forbids ``'.'`` in %-style format strings.
+- Pyramid >= 2.0: provide our own replacement for ``pyramid.compat``
+  which no longer exists
+
+Testing
+^^^^^^^
+
+- Test under python 3.7–3.10 and pypy3.
+- Stop testing under python 3.4 and 3.5.
+- Test with Pyramid 1.*
+
 
 Release 0.2.1 (2017-12-17)
 --------------------------
 
-This release officially drops support for python 2.6, 3.2, 3.3 (and theremore pypy3)
-and adds support for python 3.5 and 3.6.
+This release officially drops support for python 2.6, 3.2, 3.3 (and
+therefore pypy3) and adds support for python 3.5 and 3.6.
 
 Other than changes in test configuration, there are no substantive
 changes from `0.2`.
