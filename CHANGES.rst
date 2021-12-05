@@ -22,6 +22,7 @@ Testing
 - Test under python 3.7–3.10 and pypy3.
 - Stop testing under python 3.4 and 3.5.
 - Test with Pyramid 1.*
+- Convert CI tests from Travis to github workflow
 
 Packaging
 ^^^^^^^^^

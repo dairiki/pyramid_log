@@ -196,9 +196,8 @@ Jeff Dairiki <dairiki@dairiki.org>
 .. ==== Badges ====
 
 .. |build status| image::
-    https://travis-ci.org/dairiki/pyramid_log.svg?branch=master
-    :target: https://travis-ci.org/dairiki/pyramid_log
-
+    https://github.com/dairiki/pyramid_log/actions/workflows/tests.yml/badge.svg?branch=master
+    :target: https://github.com/dairiki/pyramid_log/actions/workflows/tests.yml
 .. |downloads| image::
     https://img.shields.io/pypi/dm/pyramid_log.svg
     :target: https://pypi.python.org/pypi/pyramid_log/
