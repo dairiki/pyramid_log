@@ -8,10 +8,10 @@ import sys
 
 PY2 = sys.version_info[0] == 2
 
-if PY2:                                  # pragma: no cover
+if PY2:
     from io import BytesIO as NativeIO   # noqa: F401
     binary_type = str
-else:                                    # pragma: no cover
+else:
     from io import StringIO as NativeIO  # noqa: F401
     binary_type = bytes
 
@@ -24,7 +24,7 @@ def text_(s, encoding='latin-1', errors='strict'):
     return s
 
 
-if PY2:                         # pragma: no cover
+if PY2:
     def native_(s, encoding='latin-1', errors='strict'):
         """ If ``s`` is an instance of ``text_type``, return
         ``s.encode(encoding, errors)``, otherwise return ``str(s)``"""

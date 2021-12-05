@@ -57,20 +57,20 @@ class Formatter(logging.Formatter):
     try:
         logging.Formatter(validate=False)
         _validate_supported = True
-    except TypeError:           # pragma: no cover
+    except TypeError:
         _validate_supported = False
 
     try:
         logging.Formatter(style='%')
         _style_supported = True
-    except TypeError:           # pragma: no cover
+    except TypeError:
         _style_supported = False  # python 2.7
 
     def __init__(self, fmt=None, datefmt=None, style='%', **kwargs):
         # python >= 3.8 does not, by default, allow '.' in '%' format strings
-        if self._style_supported:  # pragma: no branch
+        if self._style_supported:
             kwargs['style'] = '%'
-        if self._validate_supported:  # pragma: no branch
+        if self._validate_supported:
             kwargs['validate'] = False
         super(Formatter, self).__init__(fmt, datefmt, **kwargs)
 
@@ -146,7 +146,7 @@ class Missing(object):
             return '<?%s?>' % self.key
         return fallback
 
-    if PY2:                         # pragma: no cover
+    if PY2:
         __unicode__ = __str__
 
         def __str__(self):
