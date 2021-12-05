@@ -23,6 +23,10 @@ Testing
 - Stop testing under python 3.4 and 3.5.
 - Test with Pyramid 1.*
 
+Packaging
+^^^^^^^^^
+
+- The packaging has been PEP517-ized.
 
 Release 0.2.1 (2017-12-17)
 --------------------------
