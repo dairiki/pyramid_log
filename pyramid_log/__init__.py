@@ -78,24 +78,24 @@ class Formatter(logging.Formatter):
         """ Format the specific record as text.
 
         """
-        has_record = hasattr(record, 'request')
-        if not has_record:
+        has_request = hasattr(record, 'request')
+        if not has_request:
             request = get_current_request()
             if request is not None:
                 record.request = request
 
-        # magic_record.__dict__ support dotted attribute lookup
+        # magic_record.__dict__ supports dotted attribute lookup
         magic_record = _WrapDict(record, _DottedLookup)
 
-        # Disable logging during disable to prevent recursion (in case
+        # Disable logging during formatting to prevent recursion (in case
         # a logged request property generates a log message)
         save_disable = logging.root.manager.disable
         logging.disable(record.levelno)
         try:
-            return logging.Formatter.format(self, magic_record)
+            return super(Formatter, self).format(magic_record)
         finally:
             logging.disable(save_disable)
-            if not has_record and hasattr(record, 'request'):
+            if not has_request and hasattr(record, 'request'):
                 del record.request
 
 
