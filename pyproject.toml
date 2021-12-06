@@ -10,3 +10,5 @@ norecursedirs = ".tox build"
 
 [tool.coverage.run]
 branch = true
+parallel = true
+source_pkgs = ["pyramid_log"]
