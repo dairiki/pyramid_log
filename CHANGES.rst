@@ -6,6 +6,15 @@ Release 2.0 (unreleased)
 
 This release drops support for python 2.7.
 
+API
+^^^
+
+- Raise ``ValueError`` if ``pyramid_log.Formatter`` is passed a value of
+  other than ``'%'`` for ``style`` parameter.
+
+- Issue a ``UserWarning`` if ``pyramid_log.Formatter`` is explicitly passed
+  a ``validate=True``.
+
 Release 1.0 (2021-12-05)
 ------------------------
 

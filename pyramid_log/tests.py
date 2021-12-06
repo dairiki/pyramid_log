@@ -5,6 +5,7 @@
 import io
 import logging
 import math
+import sys
 
 from pyramid.request import Request
 from pyramid import testing
@@ -66,6 +67,17 @@ def log_record():
 
 
 class TestFormatter:
+    @pytest.mark.parametrize('style', ['{', '$'])
+    def test_init_with_unsupported_style(self, style):
+        with pytest.raises(ValueError):
+            Formatter('fmtstr', style=style)
+
+    @pytest.mark.skipif(sys.version_info < (3, 8),
+                        reason="validate requires python>=3.8")
+    def test_init_warns_if_validation_requested(self):
+        with pytest.warns(UserWarning, match='validate'):
+            Formatter('%(request.method)s', validate=True)
+
     def test_with_explicit_request(self, log_record):
         log_record.request = Request.blank('/', POST={})
         formatter = Formatter('%(request.method)s')

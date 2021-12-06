@@ -8,6 +8,7 @@ for use in log messages.
 
 from contextlib import contextmanager
 import logging
+import warnings
 
 from pyramid.threadlocal import get_current_request
 
@@ -58,8 +59,19 @@ class Formatter(logging.Formatter):
         _validate_supported = False
 
     def __init__(self, fmt=None, datefmt=None, style='%', **kwargs):
+        if style != '%':
+            raise ValueError(
+                f"Style {style!r} is not currently supported by "
+                f"{self.__class__.__module__}.{self.__class__.__name__}"
+            )
         # python >= 3.8 does not, by default, allow '.' in '%' format strings
         if self._validate_supported:
+            if kwargs.get('validate'):
+                warnings.warn(
+                    "Forcing validate=False. "
+                    "(%-style formatting strings with dotted attribute names "
+                    "will not pass validation by logging.Formatter.)"
+                )
             kwargs['validate'] = False
         super().__init__(fmt, datefmt, **kwargs)
 
