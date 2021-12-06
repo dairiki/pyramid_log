@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2014 Geoffrey T. Dairiki <dairiki@dairiki.org>
+# Copyright © 2014–2021 Geoffrey T. Dairiki <dairiki@dairiki.org>
 #
 """ A logging formatter which make pyramid request attributes available
 for use in log messages.
