@@ -66,17 +66,24 @@ def log_record():
     return logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
 
 
-class TestFormatter:
-    @pytest.mark.parametrize('style', ['{', '$'])
-    def test_init_with_unsupported_style(self, style):
-        with pytest.raises(ValueError):
-            Formatter('fmtstr', style=style)
+requires_validate = pytest.mark.skipif(sys.version_info < (3, 8),
+                                       reason="validate requires python>=3.8")
 
-    @pytest.mark.skipif(sys.version_info < (3, 8),
-                        reason="validate requires python>=3.8")
+
+class TestFormatter:
+    def test_init_with_unsupported_style(self):
+        with pytest.raises(ValueError):
+            Formatter('formatstr', style='$')
+
+    @requires_validate
     def test_init_warns_if_validation_requested(self):
         with pytest.warns(UserWarning, match='validate'):
             Formatter('%(request.method)s', validate=True)
+
+    @requires_validate
+    @pytest.mark.filterwarnings("error")
+    def test_init_accepts_validate_for_strformat(self):
+        Formatter('{request.method}', style='{', validate=True)
 
     def test_with_explicit_request(self, log_record):
         log_record.request = Request.blank('/', POST={})
@@ -85,6 +92,15 @@ class TestFormatter:
 
     def test_with_threadlocal_request(self, current_request, log_record):
         formatter = Formatter('%(request.method)s')
+        assert formatter.format(log_record) == 'GET'
+
+    def test_strformat_style(self, current_request, log_record):
+        formatter = Formatter('{request.method}', style='{')
+        assert formatter.format(log_record) == 'GET'
+
+    @pytest.mark.xfail(strict=True)
+    def test_strformat_style_missing(self, current_request, log_record):
+        formatter = Formatter('{request.foo}', style='{')
         assert formatter.format(log_record) == 'GET'
 
     def test_with_no_request(self, log_record):

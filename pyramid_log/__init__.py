@@ -59,21 +59,28 @@ class Formatter(logging.Formatter):
         _validate_supported = False
 
     def __init__(self, fmt=None, datefmt=None, style='%', **kwargs):
-        if style != '%':
+        if style == '%':
+            # Make record.__dict__ support dotted attribute lookup
+            self._adapt_record = lambda record: _WrapDict(record,
+                                                          _DottedLookup)
+            # python>=3.8 does not, by default, allow '.' in % format strings
+            if self._validate_supported:
+                if kwargs.get('validate'):
+                    warnings.warn(
+                        "Forcing validate=False. "
+                        "(%-style formatting strings with dotted attribute "
+                        "names will not pass validation by logging.Formatter.)"
+                    )
+                kwargs['validate'] = False
+        elif style == '{':
+            self._adapt_record = lambda record: record
+        else:
             raise ValueError(
                 f"Style {style!r} is not currently supported by "
                 f"{self.__class__.__module__}.{self.__class__.__name__}"
             )
-        # python >= 3.8 does not, by default, allow '.' in '%' format strings
-        if self._validate_supported:
-            if kwargs.get('validate'):
-                warnings.warn(
-                    "Forcing validate=False. "
-                    "(%-style formatting strings with dotted attribute names "
-                    "will not pass validation by logging.Formatter.)"
-                )
-            kwargs['validate'] = False
-        super().__init__(fmt, datefmt, **kwargs)
+
+        super().__init__(fmt, datefmt, style, **kwargs)
 
     def format(self, record):
         """ Format the specific record as text.
@@ -84,9 +91,7 @@ class Formatter(logging.Formatter):
             # Disable logging to prevent recursion (in case, e.g., a logged
             # request property generates a log message)
             with logging_disabled(record.levelno):
-                # magic_record.__dict__ supports dotted attribute lookup
-                magic_record = _WrapDict(record, _DottedLookup)
-                return super().format(magic_record)
+                return super().format(self._adapt_record(record))
 
 
 @contextmanager
