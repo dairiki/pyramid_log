@@ -8,8 +8,10 @@ for use in log messages.
 """
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 import logging
 import sys
+
 from pyramid.threadlocal import get_current_request
 
 from ._compat import PY2, native_
@@ -78,25 +80,50 @@ class Formatter(logging.Formatter):
         """ Format the specific record as text.
 
         """
-        has_request = hasattr(record, 'request')
-        if not has_request:
-            request = get_current_request()
-            if request is not None:
-                record.request = request
+        # Temporarily set record.request to current Pyramid request object
+        with _add_request_attr(record):
+            # Disable logging to prevent recursion (in case, e.g., a logged
+            # request property generates a log message)
+            with logging_disabled(record.levelno):
+                # magic_record.__dict__ supports dotted attribute lookup
+                magic_record = _WrapDict(record, _DottedLookup)
+                return super(Formatter, self).format(magic_record)
 
-        # magic_record.__dict__ supports dotted attribute lookup
-        magic_record = _WrapDict(record, _DottedLookup)
 
-        # Disable logging during formatting to prevent recursion (in case
-        # a logged request property generates a log message)
-        save_disable = logging.root.manager.disable
-        logging.disable(record.levelno)
-        try:
-            return super(Formatter, self).format(magic_record)
-        finally:
-            logging.disable(save_disable)
-            if not has_request and hasattr(record, 'request'):
-                del record.request
+@contextmanager
+def _add_request_attr(record):
+    """ Temporarily add Pyramid request attribute to log record.
+
+    If ``record`` does not have a ``record`` attribute, ``record.request``
+    is set to the current Pyramid request object for the duration
+    of the context.
+    If there is no active Pyramid request, the ``request`` attribute is
+    is left unset.
+    """
+    added_attrs = []
+    has_request = hasattr(record, 'request')
+    if not has_request:
+        request = get_current_request()
+        if request is not None:
+            record.request = request
+            added_attrs.append('request')
+    try:
+        yield record
+    finally:
+        for attr in added_attrs:
+            delattr(record, attr)
+
+
+@contextmanager
+def logging_disabled(level=logging.CRITICAL):
+    """ Temporarily disable logging.
+    """
+    save_disable = logging.root.manager.disable
+    logging.disable(level)
+    try:
+        yield
+    finally:
+        logging.disable(save_disable)
 
 
 class _WrapDict(object):
