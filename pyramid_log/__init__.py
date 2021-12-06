@@ -213,7 +213,7 @@ class _DottedLookup(object):
         parts = key.split('.')
         try:
             v = self.dict[parts[0]]
-            for i, part in enumerate(parts[1:]):
+            for part in parts[1:]:
                 a = getattr(v, part, _marker)
                 v = a if a is not _marker else v[part]
         except (LookupError, TypeError):
