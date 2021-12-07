@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright © 2014–2021 Geoffrey T. Dairiki <dairiki@dairiki.org>
 #
-from __future__ import absolute_import
 
+import io
 import logging
 import math
 
 from pyramid.request import Request
 from pyramid import testing
 import pytest
-
-from ._compat import NativeIO, text_
 
 from pyramid_log import (
     _add_request_attr,
@@ -31,7 +28,7 @@ def current_request(request):
     return r
 
 
-class TestIntegration(object):
+class TestIntegration:
     """ Integration tests.
 
     """
@@ -39,7 +36,7 @@ class TestIntegration(object):
     def logstream(self, monkeypatch):
         """ Patch the root logger to log to an in-memory stream.
         """
-        logstream = NativeIO()
+        logstream = io.StringIO()
         root = logging.getLogger()
         monkeypatch.setattr(root, 'handlers', [])
         handler = logging.StreamHandler(logstream)
@@ -68,7 +65,7 @@ def log_record():
     return logging.LogRecord('test', logging.INFO, __file__, 0, '', (), None)
 
 
-class TestFormatter(object):
+class TestFormatter:
     def test_with_explicit_request(self, log_record):
         log_record.request = Request.blank('/', POST={})
         formatter = Formatter('%(request.method)s')
@@ -91,17 +88,17 @@ class TestFormatter(object):
         assert formatter.format(log_record) == '(no request)'
 
 
-class MockObject(object):
+class MockObject:
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
 
-class MockWrapper(object):
+class MockWrapper:
     def __init__(self, d):
         self.wrapped = d
 
 
-class Test_add_request_attr(object):
+class Test_add_request_attr:
     @pytest.fixture
     def record(self):
         return MockObject()
@@ -127,7 +124,7 @@ class Test_add_request_attr(object):
             assert record is record_with_request
 
 
-class Test_logging_disabled(object):
+class Test_logging_disabled:
     def test(self):
         assert logging.root.manager.disable == 0
         with logging_disabled(logging.WARNING):
@@ -144,7 +141,7 @@ class Test_logging_disabled(object):
         assert len(caplog.records) == 2
 
 
-class TestWrapDict(object):
+class TestWrapDict:
     def test_dict(self):
         obj = MockObject()
         proxy = _WrapDict(obj, MockWrapper)
@@ -152,7 +149,7 @@ class TestWrapDict(object):
         assert proxy.__dict__.wrapped is obj.__dict__
 
     def test_getattr(self):
-        class Obj(object):
+        class Obj:
             def m(self):
                 return 'foo'
             x = 'bar'
@@ -179,10 +176,10 @@ class TestWrapDict(object):
         assert obj.__dict__ == {}
 
 
-EURO_SIGN = text_('\N{EURO SIGN}', 'unicode-escape')
+EURO_SIGN = '\N{EURO SIGN}'
 
 
-class TestMissing(object):
+class TestMissing:
     @pytest.mark.parametrize('fallback, expected', [
         (None, "<?attr.name?>"),
         ('foo', "'foo'"),
@@ -195,10 +192,7 @@ class TestMissing(object):
     def test_repr_unicode_key(self):
         # carefully constructed to work in python 3.2
         missing = Missing(EURO_SIGN)
-        assert repr(missing) in (
-            r"<?\u20ac?>",              # py2
-            "<?%s?>" % EURO_SIGN,       # py3k
-            )
+        assert repr(missing) == f"<?{EURO_SIGN}?>"
 
     def test_str(self):
         missing = Missing('key', "foo")
@@ -242,16 +236,10 @@ class TestMissing(object):
 
     def test_format_unicode(self):
         missing = Missing('key', EURO_SIGN)
-        # missing.__str__()
-        assert '%s' % missing in (
-            r'\u20ac',                  # py2
-            EURO_SIGN,                  # py3k
-            )
-        # This tests missing.__unicode__() under python 2
-        assert text_('%s') % missing == EURO_SIGN
+        assert '%s' % missing == EURO_SIGN
 
 
-class TestDottedLookup(object):
+class TestDottedLookup:
     def test_dotted_attribute_lookup(self):
         d = _DottedLookup({'a': MockObject(b=MockObject(c='d'))})
         assert d['a.b.c'] == 'd'

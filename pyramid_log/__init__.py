@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright © 2014–2021 Geoffrey T. Dairiki <dairiki@dairiki.org>
 #
@@ -6,15 +5,11 @@
 for use in log messages.
 
 """
-from __future__ import absolute_import
 
 from contextlib import contextmanager
 import logging
-import sys
 
 from pyramid.threadlocal import get_current_request
-
-from ._compat import PY2, native_
 
 
 class Formatter(logging.Formatter):
@@ -62,19 +57,11 @@ class Formatter(logging.Formatter):
     except TypeError:
         _validate_supported = False
 
-    try:
-        logging.Formatter(style='%')
-        _style_supported = True
-    except TypeError:
-        _style_supported = False  # python 2.7
-
     def __init__(self, fmt=None, datefmt=None, style='%', **kwargs):
         # python >= 3.8 does not, by default, allow '.' in '%' format strings
-        if self._style_supported:
-            kwargs['style'] = '%'
         if self._validate_supported:
             kwargs['validate'] = False
-        super(Formatter, self).__init__(fmt, datefmt, **kwargs)
+        super().__init__(fmt, datefmt, **kwargs)
 
     def format(self, record):
         """ Format the specific record as text.
@@ -87,7 +74,7 @@ class Formatter(logging.Formatter):
             with logging_disabled(record.levelno):
                 # magic_record.__dict__ supports dotted attribute lookup
                 magic_record = _WrapDict(record, _DottedLookup)
-                return super(Formatter, self).format(magic_record)
+                return super().format(magic_record)
 
 
 @contextmanager
@@ -126,7 +113,7 @@ def logging_disabled(level=logging.CRITICAL):
         logging.disable(save_disable)
 
 
-class _WrapDict(object):
+class _WrapDict:
     """ An object proxy which provides a “wrapped” version of the proxied
     object’s ``__dict__``.
 
@@ -154,7 +141,7 @@ class _WrapDict(object):
         return delattr(self._obj, attr)
 
 
-class Missing(object):
+class Missing:
     """ Returned for missing keys.
 
     This has decent values upon conversion to various types, making
@@ -168,22 +155,13 @@ class Missing(object):
     def __str__(self):
         fallback = self.fallback
         if fallback is None:
-            # NB: this differs from __repr__ in that we are allowed to return
-            # unicode in python 2
-            return '<?%s?>' % self.key
+            return f'<?{self.key}?>'
         return fallback
-
-    if PY2:
-        __unicode__ = __str__
-
-        def __str__(self):
-            encoding = sys.getdefaultencoding()
-            return self.__unicode__().encode(encoding, 'backslashreplace')
 
     def __repr__(self):
         fallback = self.fallback
         if fallback is None:
-            return '<?%s?>' % native_(self.key, 'ascii', 'backslashreplace')
+            return f'<?{self.key}?>'
         return repr(fallback)
 
     _int_fallback = 0
@@ -212,7 +190,7 @@ class Missing(object):
 _marker = object()
 
 
-class _DottedLookup(object):
+class _DottedLookup:
     """ A dict which supports dotted-key chained lookup, with fallback
     if the lookup fails.
 
