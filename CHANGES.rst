@@ -15,6 +15,15 @@ API
 - Issue a ``UserWarning`` if ``pyramid_log.Formatter`` is explicitly passed
   a ``validate=True``.
 
+
+Release 1.0.1 (2021-12-07)
+--------------------------
+
+A bit of code refactoring and cleanup in preparation for dropping
+python 2 support.
+
+No API or functional changes.
+
 Release 1.0 (2021-12-05)
 ------------------------
 
