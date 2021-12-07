@@ -1,8 +1,8 @@
 History
 =======
 
-Release 2.0 (unreleased)
-------------------------
+Release 2.0.0a1 (2021-12-07)
+----------------------------
 
 This release drops support for python 2.7.
 
