@@ -2,7 +2,7 @@
 Request Attributes in Log Messages
 ##################################
 
-|version| |py_versions| |py_implementation| |license| |build status|
+|version| |py_versions| |py_implementation| |license| |build status| |trackgit|
 
 What It Does
 ============
@@ -222,3 +222,7 @@ Jeff Dairiki <dairiki@dairiki.org>
     https://img.shields.io/pypi/status/pyramid_log.svg
     :target: https://pypi.python.org/pypi/pyramid_log/
     :alt: Development Status
+.. |trackgit| image::
+    https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/lhat1p4ztjd57xd6xaml
+    :target: https://trackgit.com
+    :alt: Trackgit Views
