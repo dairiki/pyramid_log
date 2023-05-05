@@ -53,7 +53,7 @@ install using pip_::
 
     pip install pyramid-log
 
-It has been tested on python 2.7, 3.4–3.6 and pypy.
+It has been tested on python 3.7–3.11 and pypy.
 
 Development happens at https://github.com/dairiki/pyramid_log/.
 

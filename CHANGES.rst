@@ -1,6 +1,12 @@
 History
 =======
 
+Next Release
+------------
+
+This release drops support for python 3.6.
+
+
 Release 2.0.0a1 (2021-12-07)
 ----------------------------
 
