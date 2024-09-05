@@ -52,12 +52,6 @@ class Formatter(logging.Formatter):
     determine the current request.
 
     '''
-    try:
-        logging.Formatter(validate=False)
-        _validate_supported = True
-    except TypeError:
-        _validate_supported = False
-
     def __init__(self, fmt=None, datefmt=None, style='%', **kwargs):
         if style != '%':
             raise ValueError(
@@ -65,14 +59,13 @@ class Formatter(logging.Formatter):
                 f"{self.__class__.__module__}.{self.__class__.__name__}"
             )
         # python >= 3.8 does not, by default, allow '.' in '%' format strings
-        if self._validate_supported:
-            if kwargs.get('validate'):
-                warnings.warn(
-                    "Forcing validate=False. "
-                    "(%-style formatting strings with dotted attribute names "
-                    "will not pass validation by logging.Formatter.)"
-                )
-            kwargs['validate'] = False
+        if kwargs.get('validate'):
+            warnings.warn(
+                "Forcing validate=False. "
+                "(%-style formatting strings with dotted attribute names "
+                "will not pass validation by logging.Formatter.)"
+            )
+        kwargs['validate'] = False
         super().__init__(fmt, datefmt, **kwargs)
 
     def format(self, record):
