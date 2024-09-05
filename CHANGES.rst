@@ -4,7 +4,7 @@ History
 Next Release
 ------------
 
-This release drops support for python 3.6.
+This release drops support for python 3.6 & 3.7 and adds testing under python 3.11 and 3.12
 
 
 Release 2.0.0a1 (2021-12-07)
